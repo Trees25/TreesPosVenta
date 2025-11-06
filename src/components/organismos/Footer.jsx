@@ -12,11 +12,11 @@ export function Footer() {
         </span>
       </section>
       <section className="derechos">
-        <span>Trees</span>
+        <span>Sistema desarrollado por Trees</span>
         <div className="separador"></div>
         <span>Todos los derechos reservados</span>
         <div className="separador"></div>
-        <span>© 2025 treestech.dev</span>
+        <a href="https://www.treestech.dev" target="_blank" rel="noopener noreferrer" className="footer-link">© 2025 treestech.dev</a>
       </section>
     </Container>
   );

@@ -8,8 +8,24 @@ import {
 import { v } from "../../../styles/variables";
 import { NavLink } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import { useAuthStore } from "../../../store/AuthStore";
+import { useNavigate } from "react-router-dom";
+
+
 export const MenuMovil = ({ setState }) => {
   const [state, setstate] = useState(true);
+  const cerrarSesion = useAuthStore((s) => s.cerrarSesion);
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await cerrarSesion();
+      setState(false); // cierra el menú
+      navigate("/login"); // redirige al login
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error.message);
+    }
+  };
 
   return (
     <Container>
@@ -65,11 +81,11 @@ export const MenuMovil = ({ setState }) => {
               </NavLink>
             </div>
           ))}
+
+          {/* BOTON SALIR*/} 
           <div className={state ? "LinkContainer active" : "LinkContainer"}>
-            <div
-              className="Links"
-              onClick={() => SetstateDesplegableLinks(!stateDesplegableLinks)}
-            >
+           <div className="Links" onClick={handleLogout}>
+            
               <section className={state ? "content open" : "content"}>
                 <Icon
                   color="#CE82FF"

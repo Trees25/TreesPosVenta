@@ -3,3 +3,8 @@ export const supabase = createClient(
     import.meta.env.VITE_APP_SUPABASE_URL,
     import.meta.env.VITE_APP_SUPABASE_ANON_KEY
 )
+
+export const supabaseSus = createClient(
+    import.meta.env.VITE_APP_SUPABASE2_URL,
+    import.meta.env.VITE_APP_SUPABASE2_ANON_KEY
+)

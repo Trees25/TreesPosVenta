@@ -14,10 +14,18 @@ import { useQueryClient } from "@tanstack/react-query";
 export function Sidebar({ state, setState }) {
   const {cerrarSesion} = useAuthStore()
   const queryClient = useQueryClient()
-//  const salir =()=>{
-//   cerrarSesion()
-//   queryClient.clear();
-//  }
+
+ const salir = async () => {
+  await cerrarSesion();
+  queryClient.clear();
+  navigate("/login", { replace: true });
+  setTimeout(() => {
+    if (localStorage.getItem("sb-yourprojectid-auth-token")) {
+      window.location.href = "/login"; // backup si Supabase no limpió bien
+    }
+  }, 500);
+};
+
   return (
     <Main $isopen={state.toString()}>
       <span className="Sidebarbutton" onClick={() => setState(!state)}>
@@ -68,7 +76,7 @@ export function Sidebar({ state, setState }) {
           </div>
         ))}
         <div className={state ? "LinkContainer active" : "LinkContainer"}>
-          <div className="Links" onClick={cerrarSesion} >
+          <div className="Links" onClick={salir} >
             <section className={state ? "content open" : "content"}>
               <Icon
                 color="#CE82FF"

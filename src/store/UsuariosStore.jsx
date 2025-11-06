@@ -16,7 +16,6 @@ export const useUsuariosStore = create((set) => ({
   itemSelect: null,
   setItemSelect: (p) => set({ itemSelect: p }),
   mostrarusuarios: async (p) => {
-    console.log("🏁 Ejecutando mostrarusuarios con:", p.id_auth);
     try {
       const { data, error } = await supabase
         .from(tabla)
@@ -24,7 +23,6 @@ export const useUsuariosStore = create((set) => ({
         .eq("id_auth", p.id_auth)
         .maybeSingle();
 
-      console.log("📥 Resultado Supabase:", data);
 
       if (error) {
         console.error("💥 Supabase error en MostrarUsuarios:", error);

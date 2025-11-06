@@ -35,7 +35,7 @@ export const LandingPagesWelcome = () => {
       <ContentSection>
         <SubContentSection>
           <LeftSection className="left-section">
-            <h1>TREES PosVenta {datausuarios?.id} </h1>
+            <h1>Bienvenido al PosVenta de Trees</h1>
             <div style={{ display: "flex", gap: "10px" }}>
             <BtnLink url={"https://treestech.dev"} color={"#fff"} bgcolor={"#ff6a00"} titulo={"Contactanos"} />
               <BtnLink url={"https://youtube.com"} color={"#2f2f2f"} bgcolor={"#ffffff"} titulo={"Como usar"} />
