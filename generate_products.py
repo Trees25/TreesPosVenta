@@ -9,7 +9,7 @@ OUTPUT_FILE = 'productos_1000.csv'
 ADJECTIVES = ['Nuevo', 'Usado', 'Gran', 'Pequeño', 'Rojo', 'Azul', 'Verde', 'Negro', 'Blanco', 'Especial', 'Super', 'Mega', 'Ultra', 'Eco', 'Max']
 NOUNS = ['Tornillo', 'Martillo', 'Clavo', 'Sierra', 'Taladro', 'Lija', 'Pintura', 'Brocha', 'Cinta', 'Cable', 'Tubo', 'Manguera', 'Llave', 'Tuerca', 'Arandela', 'Cemento']
 CATEGORIES = list(range(1, 11)) # 1 to 10
-EMPRESA_ID = 1
+EMPRESA_ID = 26
 
 def generate_product(i):
     nombre = f"{random.choice(ADJECTIVES)} {random.choice(NOUNS)} {i}"

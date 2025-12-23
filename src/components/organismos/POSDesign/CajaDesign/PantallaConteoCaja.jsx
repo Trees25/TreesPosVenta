@@ -59,7 +59,7 @@ export function PantallaConteoCaja() {
       setStateCierraCaja(false);
       reset();
       queryClient.invalidateQueries(["mostrar cierre de caja"]);
-      cerrarSesion();
+      // cerrarSesion();
     },
     onError: (error) => {
       toast.error(`Error al cerrar caja: ${error.message}`);
