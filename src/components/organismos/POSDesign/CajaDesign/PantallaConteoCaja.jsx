@@ -61,7 +61,7 @@ export function PantallaConteoCaja() {
       setStateCierraCaja(false);
       reset();
       queryClient.invalidateQueries(["mostrar caja aperturada por usuario"]);
-      navigate("/");
+      navigate("/dashboard");
       // cerrarSesion();
     },
     onError: (error) => {
