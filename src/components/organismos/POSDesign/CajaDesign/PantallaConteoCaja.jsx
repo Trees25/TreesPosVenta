@@ -16,6 +16,7 @@ import { useFormattedDate } from "../../../../hooks/useFormattedDate";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { BarLoader } from "react-spinners";
+import { useNavigate } from "react-router-dom";
 export function PantallaConteoCaja() {
   const { cerrarSesion } = useAuthStore();
   const [montoEfectivo, setMontoEfectivo] = useState(0);
@@ -30,6 +31,7 @@ export function PantallaConteoCaja() {
     setStateCierraCaja,
   } = useCierreCajaStore();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const {
     register,
     formState: { errors },
@@ -58,7 +60,8 @@ export function PantallaConteoCaja() {
       setStateConteoCaja(false);
       setStateCierraCaja(false);
       reset();
-      queryClient.invalidateQueries(["mostrar cierre de caja"]);
+      queryClient.invalidateQueries(["mostrar caja aperturada por usuario"]);
+      navigate("/");
       // cerrarSesion();
     },
     onError: (error) => {
@@ -99,7 +102,7 @@ export function PantallaConteoCaja() {
               <input
                 type="number"
                 placeholder="0.00"
-                 step="0.01"
+                step="0.01"
                 className="form__field"
                 {...register("montoreal", {
                   required: true,
