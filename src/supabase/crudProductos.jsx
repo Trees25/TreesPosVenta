@@ -11,11 +11,15 @@ export async function InsertarProductos(p) {
 }
 
 export async function MostrarProductos(p) {
-  const { data } = await supabase.rpc("mostrarproductos", {
+  const { data, error } = await supabase.rpc("mostrarproductos", {
     _id_empresa: p.id_empresa,
   });
+  if (error) {
+    throw new Error(error.message);
+  }
   return data;
 }
+
 export async function BuscarProductos(p) {
   const { data, error } = await supabase.rpc("buscarproductos", {
     _id_empresa: p.id_empresa,
@@ -27,12 +31,14 @@ export async function BuscarProductos(p) {
   }
   return data;
 }
+
 export async function EliminarProductos(p) {
   const { error } = await supabase.from(tabla).delete().eq("id", p.id);
   if (error) {
     throw new Error(error.message);
   }
 }
+
 export async function EditarProductos(p) {
   const { error } = await supabase.rpc("editarproductos", p);
   if (error) {
@@ -49,4 +55,11 @@ export async function MostrarUltimoProducto(p) {
     .maybeSingle();
 
   return data;
+}
+
+export async function ActualizarPreciosMasivo(p) {
+  const { error } = await supabase.rpc("actualizar_precios_masivo", p);
+  if (error) {
+    throw new Error(error.message);
+  }
 }

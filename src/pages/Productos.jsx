@@ -10,65 +10,63 @@ import {
 } from "../index";
 
 export function Productos() {
-  const {mostrarCategorias} = useCategoriasStore();
-  const {mostrarSucursales} = useSucursalesStore();
-  const {} =useAlmacenesStore()
-  const { mostrarProductos, buscarProductos, buscador,setRefetch } =
-    useProductosStore();
+  const { mostrarCategorias } = useCategoriasStore();
+  const { mostrarSucursales } = useSucursalesStore();
+  const { mostrarAlmacenesXSucursal } = useAlmacenesStore();
+  const { mostrarProductos, buscarProductos, buscador } = useProductosStore();
   const { dataempresa } = useEmpresaStore();
+
   const {
-    data: productos,
     isLoading: isLoadingProductos,
     error: errorProductos,
     refetch,
   } = useQuery({
-    queryKey: ["mostrar productos", dataempresa?.id],
-    queryFn: () => mostrarProductos({ id_empresa: dataempresa?.id, refetchs: refetch }),
-    enabled: !!dataempresa,
+    queryKey: ["mostrar productos", dataempresa?.id, buscador],
+    queryFn: async () => {
+      if (buscador) {
+        return buscarProductos({ id_empresa: dataempresa?.id, buscador: buscador });
+      }
+      return mostrarProductos({ id_empresa: dataempresa?.id, refetchs: refetch });
+    },
+    enabled: !!dataempresa?.id,
     refetchOnWindowFocus: false,
   });
-  
-  // Buscar categorías
-  const { isLoading: isLoadingBuscarProductos } = useQuery({
-    queryKey: ["buscar productos", buscador],
-    queryFn: () => buscarProductos({ id_empresa: dataempresa?.id, buscador: buscador }),
-    enabled: !!dataempresa,
-    refetchOnWindowFocus: false,
-  });
-  
-  // Mostrar sucursales
+
   const { isLoading: isLoadingSucursales } = useQuery({
     queryKey: ["mostrar sucursales", dataempresa?.id],
     queryFn: () => mostrarSucursales({ id_empresa: dataempresa?.id }),
-    enabled: !!dataempresa,
+    enabled: !!dataempresa?.id,
     refetchOnWindowFocus: false,
   });
-  // Mostrar almacenes por sucursal
-  const { isLoading: isLoadingAlmacenes } = useQuery({
-    queryKey: ["mostrar almacenes x sucursal", dataempresa?.id],
-    queryFn: () => mostrarSucursales({ id_empresa: dataempresa?.id }),
-    enabled: !!dataempresa,
-    refetchOnWindowFocus: false,
-  });
-  // Mostrar categorías
+
   const { isLoading: isLoadingCategorias } = useQuery({
     queryKey: ["mostrar categorias", dataempresa?.id],
     queryFn: () => mostrarCategorias({ id_empresa: dataempresa?.id }),
-    enabled: !!dataempresa,
+    enabled: !!dataempresa?.id,
     refetchOnWindowFocus: false,
   });
-  
-  // Consolidación de isLoading y error
-  const isLoading = isLoadingProductos  || isLoadingSucursales || isLoadingCategorias;
+
+  const { isLoading: isLoadingAlmacenes } = useQuery({
+    queryKey: ["mostrar almacenes x sucursal", dataempresa?.id],
+    queryFn: () => mostrarAlmacenesXSucursal({ id_empresa: dataempresa?.id }),
+    enabled: !!dataempresa?.id,
+    refetchOnWindowFocus: false,
+  });
+
+  const isLoading =
+    isLoadingProductos ||
+    isLoadingSucursales ||
+    isLoadingCategorias ||
+    isLoadingAlmacenes;
   const error = errorProductos;
-  
+
   if (isLoading) {
     return <Spinner1 />;
   }
-  
+
   if (error) {
     return <span>Error: {error.message}</span>;
   }
-  
+
   return <ProductosTemplate />;
 }

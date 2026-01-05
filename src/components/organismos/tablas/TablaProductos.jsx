@@ -54,7 +54,7 @@ export function TablaProductos({
     });
   }
   function editar(data) {
-  
+
     SetopenRegistro(true);
     setdataSelect(data);
     setAccion("Editar");
@@ -64,9 +64,9 @@ export function TablaProductos({
       accessorKey: "nombre",
       header: "Descripcion",
       cell: (info) => (
-        <td data-title="DESCRIPCION" className="ContentCell">
+        <div data-title="DESCRIPCION" className="ContentCell">
           <span>{info.getValue()}</span>
-        </td>
+        </div>
       ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
@@ -76,13 +76,16 @@ export function TablaProductos({
       },
     },
     {
-      accessorKey: "p_venta",
+      accessorKey: "precio_venta",
       header: "P. venta",
-      cell: (info) => (
-        <td data-title="P. venta" className="ContentCell">
-          <span>{info.getValue()}</span>
-        </td>
-      ),
+      cell: (info) => {
+        const value = info.row.original.precio_venta ?? info.row.original.p_venta;
+        return (
+          <div data-title="P. venta" className="ContentCell">
+            <span>{value}</span>
+          </div>
+        );
+      },
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -91,13 +94,16 @@ export function TablaProductos({
       },
     },
     {
-      accessorKey: "p_compra",
+      accessorKey: "precio_compra",
       header: "P. compra",
-      cell: (info) => (
-        <td data-title="P. compra" className="ContentCell">
-          <span>{info.getValue()}</span>
-        </td>
-      ),
+      cell: (info) => {
+        const value = info.row.original.precio_compra ?? info.row.original.p_compra;
+        return (
+          <div data-title="P. compra" className="ContentCell">
+            <span>{value}</span>
+          </div>
+        );
+      },
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -109,9 +115,9 @@ export function TablaProductos({
       accessorKey: "sevende_por",
       header: "Se vende por",
       cell: (info) => (
-        <td data-title="Se vende por" className="ContentCell">
+        <div data-title="Se vende por" className="ContentCell">
           <span>{info.getValue()}</span>
-        </td>
+        </div>
       ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
@@ -124,9 +130,9 @@ export function TablaProductos({
       accessorKey: "maneja_inventarios",
       header: "Inventarios",
       cell: (info) => (
-        <td data-title="Inventarios" className="ContentCell">
-          <Checkbox1 isChecked={info.getValue()}/>
-        </td>
+        <div data-title="Inventarios" className="ContentCell">
+          <Checkbox1 isChecked={info.getValue()} />
+        </div>
       ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
@@ -173,9 +179,9 @@ export function TablaProductos({
           prev.map((row, index) =>
             index === rowIndex
               ? {
-                  ...prev[rowIndex],
-                  [columnId]: value,
-                }
+                ...prev[rowIndex],
+                [columnId]: value,
+              }
               : row
           )
         ),
@@ -208,9 +214,8 @@ export function TablaProductos({
                     <div
                       onMouseDown={header.getResizeHandler()}
                       onTouchStart={header.getResizeHandler()}
-                      className={`resizer ${
-                        header.column.getIsResizing() ? "isResizing" : ""
-                      }`}
+                      className={`resizer ${header.column.getIsResizing() ? "isResizing" : ""
+                        }`}
                     />
                   </th>
                 ))}
