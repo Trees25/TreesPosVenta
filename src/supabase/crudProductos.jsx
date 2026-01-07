@@ -11,9 +11,16 @@ export async function InsertarProductos(p) {
 }
 
 export async function MostrarProductos(p) {
-  const { data, error } = await supabase.rpc("mostrarproductos", {
-    _id_empresa: p.id_empresa,
-  });
+  let query = supabase.from(tabla).select("*").eq("id_empresa", p.id_empresa);
+
+  if (p.id_categoria) {
+    query = query.eq("id_categoria", p.id_categoria);
+  }
+  if (p.id_proveedor) {
+    query = query.eq("id_proveedor", p.id_proveedor);
+  }
+
+  const { data, error } = await query;
   if (error) {
     throw new Error(error.message);
   }
@@ -21,10 +28,17 @@ export async function MostrarProductos(p) {
 }
 
 export async function BuscarProductos(p) {
-  const { data, error } = await supabase.rpc("buscarproductos", {
-    _id_empresa: p.id_empresa,
-    buscador: p.buscador,
-  });
+  let query = supabase.from(tabla).select("*").eq("id_empresa", p.id_empresa)
+    .ilike("nombre", `%${p.buscador}%`);
+
+  if (p.id_categoria) {
+    query = query.eq("id_categoria", p.id_categoria);
+  }
+  if (p.id_proveedor) {
+    query = query.eq("id_proveedor", p.id_proveedor);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(error.message);

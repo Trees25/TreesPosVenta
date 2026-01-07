@@ -21,9 +21,9 @@ export async function MostrarClientesProveedores(p) {
     .eq("id_empresa", p.id_empresa)
     .eq("tipo", p.tipo);
   if (error) {
-    return;
+    return [];
   }
-  return data;
+  return data || [];
 }
 export async function BuscarClientesProveedores(p) {
   const { data, error } = await supabase
@@ -31,11 +31,11 @@ export async function BuscarClientesProveedores(p) {
     .select()
     .eq("id_empresa", p.id_empresa)
     .eq("tipo", p.tipo)
-    .ilike("nombres", "%"+p.buscador+"%");
+    .ilike("nombres", "%" + p.buscador + "%");
   if (error) {
-    return;
+    return [];
   }
-  return data;
+  return data || [];
 }
 export async function EliminarClientesProveedores(p) {
   const { error } = await supabase.from(tabla).delete().eq("id", p.id);

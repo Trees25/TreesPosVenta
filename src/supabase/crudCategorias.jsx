@@ -65,7 +65,7 @@ export async function MostrarCategorias(p) {
     .select()
     .eq("id_empresa", p.id_empresa)
     .order("id", { ascending: false });
-  return data;
+  return data || [];
 }
 export async function BuscarCategorias(p) {
   const { data } = await supabase
@@ -74,7 +74,7 @@ export async function BuscarCategorias(p) {
     .eq("id_empresa", p.id_empresa)
     .ilike("nombre", "%" + p.descripcion + "%");
 
-  return data;
+  return data || [];
 }
 export async function EliminarCategorias(p) {
   const { error } = await supabase.from(tabla).delete().eq("id", p.id);

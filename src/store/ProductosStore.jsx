@@ -14,9 +14,18 @@ export const useProductosStore = create((set, get) => ({
   productosItemSelect: {
     id: 1
   },
+  idCategoria: null,
+  setIdCategoria: (p) => {
+    set({ idCategoria: p });
+  },
+  idProveedor: null,
+  setIdProveedor: (p) => {
+    set({ idProveedor: p });
+  },
   parametros: {},
   mostrarProductos: async (p) => {
-    const response = await MostrarProductos(p);
+    const { idCategoria, idProveedor } = get();
+    const response = await MostrarProductos({ ...p, id_categoria: idCategoria?.id, id_proveedor: idProveedor?.id });
     set({ parametros: p });
     if (response && response.length > 0) {
       set({ dataProductos: response });
@@ -56,7 +65,8 @@ export const useProductosStore = create((set, get) => ({
     set(mostrarProductos(parametros));
   },
   buscarProductos: async (p) => {
-    const response = await BuscarProductos(p);
+    const { idCategoria, idProveedor } = get();
+    const response = await BuscarProductos({ ...p, id_categoria: idCategoria?.id, id_proveedor: idProveedor?.id });
     if (response) {
       set({ dataProductos: response });
     } else {

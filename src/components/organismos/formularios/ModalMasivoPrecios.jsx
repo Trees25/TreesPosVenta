@@ -37,7 +37,7 @@ export function ModalMasivoPrecios({ onClose }) {
     const onSubmit = async (data) => {
         Swal.fire({
             title: "¿Estás seguro?",
-            text: `Se actualizarán los precios de venta en un ${porcentaje}% para ${cliproItemSelect ? "el proveedor " + cliproItemSelect.nombres : "TODOS los productos"}.`,
+            text: `Se actualizarán los precios de ${tipoCambio.toLowerCase()} en un ${porcentaje}% para el proveedor ${cliproItemSelect.nombres}.`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#3085d6",
@@ -50,7 +50,7 @@ export function ModalMasivoPrecios({ onClose }) {
                     await actualizarPreciosMasivo({
                         _id_empresa: dataempresa.id,
                         _porcentaje: parseFloat(porcentaje),
-                        _id_proveedor: cliproItemSelect?.id || null,
+                        _id_proveedor: cliproItemSelect.id,
                         _tipo_cambio: tipoCambio
                     });
                     await queryClient.invalidateQueries({ queryKey: ["mostrar productos"] });
@@ -93,14 +93,14 @@ export function ModalMasivoPrecios({ onClose }) {
                         </article>
 
                         <ContainerSelector>
-                            <label>Proveedor (Opcional): </label>
+                            <label>Proveedor (Obligatorio): </label>
                             <SelectList
                                 data={dataclipro}
                                 itemSelect={cliproItemSelect}
                                 onSelect={selectCliPro}
                                 displayField="nombres"
                             />
-                            <span style={{ fontSize: "12px", color: "#888" }}>Si no seleccionas ninguno, se aplicará a todos los productos.</span>
+                            {!cliproItemSelect && <span style={{ fontSize: "12px", color: "#f44336" }}>Debe seleccionar un proveedor.</span>}
                         </ContainerSelector>
 
                         <ContainerSelector>
@@ -120,6 +120,17 @@ export function ModalMasivoPrecios({ onClose }) {
                                 <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                                     <input
                                         type="radio"
+                                        id="compra_solo"
+                                        name="tipoCambio"
+                                        value="COMPRA_SOLO"
+                                        checked={tipoCambio === "COMPRA_SOLO"}
+                                        onChange={() => setTipoCambio("COMPRA_SOLO")}
+                                    />
+                                    <label htmlFor="compra_solo">Solo Precio Compra</label>
+                                </div>
+                                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                                    <input
+                                        type="radio"
                                         id="compra"
                                         name="tipoCambio"
                                         value="COMPRA"
@@ -132,11 +143,22 @@ export function ModalMasivoPrecios({ onClose }) {
                         </ContainerSelector>
                     </section>
 
-                    <Btn1
-                        icono={<v.iconoguardar />}
-                        titulo="Actualizar Precios"
-                        bgcolor="#F9D70B"
-                    />
+                    <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                        <Btn1
+                            icono={<v.iconoguardar />}
+                            titulo="Actualizar Precios"
+                            bgcolor="#F9D70B"
+                            disabled={!cliproItemSelect}
+                        />
+                        <Btn1
+                            icono={<v.iconoflechaderecha />}
+                            titulo="Volver atrás"
+                            bgcolor="#e0e0e0"
+                            color="#333"
+                            funcion={onClose}
+                            type="button"
+                        />
+                    </div>
                 </form>
             </div>
         </Container>

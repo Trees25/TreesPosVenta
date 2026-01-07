@@ -7,13 +7,15 @@ import {
   useEmpresaStore,
   useProductosStore,
   useSucursalesStore,
+  useClientesProveedoresStore
 } from "../index";
 
 export function Productos() {
   const { mostrarCategorias } = useCategoriasStore();
   const { mostrarSucursales } = useSucursalesStore();
   const { mostrarAlmacenesXSucursal } = useAlmacenesStore();
-  const { mostrarProductos, buscarProductos, buscador } = useProductosStore();
+  const { mostrarProductos, buscarProductos, buscador, idCategoria, idProveedor, dataProductos } = useProductosStore();
+  const { mostrarCliPro } = useClientesProveedoresStore();
   const { dataempresa } = useEmpresaStore();
 
   const {
@@ -21,7 +23,7 @@ export function Productos() {
     error: errorProductos,
     refetch,
   } = useQuery({
-    queryKey: ["mostrar productos", dataempresa?.id, buscador],
+    queryKey: ["mostrar productos", dataempresa?.id, buscador, idCategoria?.id, idProveedor?.id],
     queryFn: async () => {
       if (buscador) {
         return buscarProductos({ id_empresa: dataempresa?.id, buscador: buscador });
@@ -30,6 +32,7 @@ export function Productos() {
     },
     enabled: !!dataempresa?.id,
     refetchOnWindowFocus: false,
+    placeholderData: (prev) => prev
   });
 
   const { isLoading: isLoadingSucursales } = useQuery({
@@ -53,11 +56,19 @@ export function Productos() {
     refetchOnWindowFocus: false,
   });
 
+  const { isLoading: isLoadingProveedores } = useQuery({
+    queryKey: ["mostrar proveedores", dataempresa?.id],
+    queryFn: () => mostrarCliPro({ id_empresa: dataempresa?.id, tipo: "proveedor" }),
+    enabled: !!dataempresa?.id,
+    refetchOnWindowFocus: false,
+  });
+
   const isLoading =
-    isLoadingProductos ||
+    (isLoadingProductos && !dataProductos.length) ||
     isLoadingSucursales ||
     isLoadingCategorias ||
-    isLoadingAlmacenes;
+    isLoadingAlmacenes ||
+    isLoadingProveedores;
   const error = errorProductos;
 
   if (isLoading) {
