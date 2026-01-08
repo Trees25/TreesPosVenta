@@ -13,6 +13,7 @@ import { useEmpresaStore } from "../../../store/EmpresaStore";
 import { FormatearNumeroDinero } from "../../../utils/Conversiones";
 import { useThemeStore } from "../../../store/ThemeStore";
 import { useMostrarVentasXCategoriaQuery } from "../../../tanstack/ReportesStack";
+import { Device } from "../../../styles/breakpoints";
 
 export const ChartVentasCategoria = () => {
     const { data, isLoading } = useMostrarVentasXCategoriaQuery();
@@ -29,21 +30,24 @@ export const ChartVentasCategoria = () => {
             <Header>
                 <Title>Ventas por Categoría</Title>
             </Header>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                     data={data}
                     layout="vertical"
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                 >
                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                     <XAxis type="number" hide />
                     <YAxis
                         dataKey="categoria"
                         type="category"
-                        width={100}
+                        width={80}
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: themeStyle.text, fontSize: 12 }}
+                        tick={{
+                            fill: themeStyle.text,
+                            fontSize: 10,
+                        }}
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Bar dataKey="total" radius={[0, 10, 10, 0]}>
@@ -77,10 +81,15 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const Container = styled.div`
-  padding: 20px;
-  min-height: 350px;
+  padding: 15px;
+  min-height: 400px;
+  height: 400px;
   display: flex;
   flex-direction: column;
+  @media ${Device.tablet} {
+    padding: 20px;
+    height: 450px;
+  }
 `;
 
 const LoadingContainer = styled.div`

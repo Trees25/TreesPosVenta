@@ -77,6 +77,15 @@ const MainContent = styled.div`
     "area4";
   grid-template-columns: 1fr;
   gap: 15px;
+  @media ${Device.tablet} {
+    grid-template-areas:
+      "area1 area1"
+      "area2 area2"
+      "area3 area3"
+      "area4 area4"
+      "area5 area5";
+    grid-template-columns: 1fr 1fr;
+  }
   @media ${Device.desktop} {
     grid-template-areas:
       "area1 area1 area3"
@@ -135,6 +144,9 @@ const Area5 = styled.section`
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
+  @media ${Device.tablet} {
+    grid-template-columns: repeat(2, 1fr);
+  }
   @media ${Device.desktop} {
     grid-template-columns: repeat(2, 1fr);
   }

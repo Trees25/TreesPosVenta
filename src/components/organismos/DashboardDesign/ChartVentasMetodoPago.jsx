@@ -1,80 +1,94 @@
 import styled from "styled-components";
 import {
-    PieChart,
-    Pie,
-    Cell,
-    Tooltip,
-    ResponsiveContainer,
-    Legend,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
 } from "recharts";
 import { useEmpresaStore } from "../../../store/EmpresaStore";
 import { FormatearNumeroDinero } from "../../../utils/Conversiones";
 import { useThemeStore } from "../../../store/ThemeStore";
 import { useMostrarVentasXMetodoPagoQuery } from "../../../tanstack/ReportesStack";
+import { Device } from "../../../styles/breakpoints";
 
 export const ChartVentasMetodoPago = () => {
-    const { data, isLoading } = useMostrarVentasXMetodoPagoQuery();
-    const { dataempresa } = useEmpresaStore();
-    const { themeStyle } = useThemeStore();
+  const { data, isLoading } = useMostrarVentasXMetodoPagoQuery();
+  const { dataempresa } = useEmpresaStore();
+  const { themeStyle } = useThemeStore();
 
-    const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
-    if (isLoading) return <LoadingContainer>Cargando medios de pago...</LoadingContainer>;
-    if (!data || data.length === 0) return <EmptyContainer>No hay datos de ventas por medio de pago para este periodo</EmptyContainer>;
+  if (isLoading) return <LoadingContainer>Cargando medios de pago...</LoadingContainer>;
+  if (!data || data.length === 0) return <EmptyContainer>No hay datos de ventas por medio de pago para este periodo</EmptyContainer>;
 
-    return (
-        <Container>
-            <Header>
-                <Title>Ventas por Medio de Pago</Title>
-            </Header>
-            <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                    <Pie
-                        data={data}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="total_monto"
-                        nameKey="nombre_metodopago"
-                    >
-                        {data?.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend verticalAlign="bottom" height={36} />
-                </PieChart>
-            </ResponsiveContainer>
-        </Container>
-    );
+  return (
+    <Container>
+      <Header>
+        <Title>Ventas por Medio de Pago</Title>
+      </Header>
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={data}
+            cx="50%"
+            cy="50%"
+            labelLine={false}
+            outerRadius="80%"
+            fill="#8884d8"
+            dataKey="total_monto"
+            nameKey="nombre_metodopago"
+          >
+            {data?.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip content={<CustomTooltip />} />
+          <Legend
+            verticalAlign="bottom"
+            height={36}
+            iconType="circle"
+            wrapperStyle={{
+              fontSize: "12px",
+              paddingTop: "10px"
+            }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    </Container>
+  );
 };
 
 const CustomTooltip = ({ active, payload }) => {
-    const { dataempresa } = useEmpresaStore();
-    if (active && payload && payload.length) {
-        return (
-            <TooltipContainer>
-                <Label>{payload[0].name}</Label>
-                <Value>
-                    {FormatearNumeroDinero(
-                        payload[0].value,
-                        dataempresa?.currency,
-                        dataempresa?.iso
-                    )}
-                </Value>
-            </TooltipContainer>
-        );
-    }
-    return null;
+  const { dataempresa } = useEmpresaStore();
+  if (active && payload && payload.length) {
+    return (
+      <TooltipContainer>
+        <Label>{payload[0].name}</Label>
+        <Value>
+          {FormatearNumeroDinero(
+            payload[0].value,
+            dataempresa?.currency,
+            dataempresa?.iso
+          )}
+        </Value>
+      </TooltipContainer>
+    );
+  }
+  return null;
 };
 
 const Container = styled.div`
-  padding: 20px;
-  min-height: 350px;
+  padding: 15px;
+  min-height: 400px;
+  height: 400px;
   display: flex;
   flex-direction: column;
+  @media ${Device.tablet} {
+    padding: 20px;
+    height: 450px;
+  }
 `;
 
 const LoadingContainer = styled.div`
