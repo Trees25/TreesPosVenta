@@ -6,7 +6,7 @@ import { useReportesStore } from "../store/ReportesStore";
 
 export const useMostrarVentasDashboardQuery = () => {
   const { dataempresa } = useEmpresaStore();
-const { fechaInicio, fechaFin } = useDashboardStore();
+  const { fechaInicio, fechaFin } = useDashboardStore();
   const { mostrarVentasDashboard } = useReportesStore();
   return useQuery({
     queryKey: [
@@ -28,8 +28,8 @@ const { fechaInicio, fechaFin } = useDashboardStore();
 };
 export const useMostrarCantidadDetalleVentaDashboardQuery = () => {
   const { dataempresa } = useEmpresaStore();
-const { fechaInicio, fechaFin } = useDashboardStore();
-  const { mostrarVentasDashboard,mostrarCantidadDetalleVentasDashboard } = useReportesStore();
+  const { fechaInicio, fechaFin } = useDashboardStore();
+  const { mostrarVentasDashboard, mostrarCantidadDetalleVentasDashboard } = useReportesStore();
   return useQuery({
     queryKey: [
       "mostrar cantidad detalle Ventas Dashboard",
@@ -50,7 +50,7 @@ const { fechaInicio, fechaFin } = useDashboardStore();
 };
 export const useMostrarCantidadDetalleVentaPeriodoAnteriorDashboardQuery = () => {
   const { dataempresa } = useEmpresaStore();
-const { setFechasAnteriores } = useDashboardStore();
+  const { setFechasAnteriores } = useDashboardStore();
   const { mostrarCantidadDetalleVentasDashboard } = useReportesStore();
   const fechasAnteriores = setFechasAnteriores();
   return useQuery({
@@ -73,9 +73,9 @@ const { setFechasAnteriores } = useDashboardStore();
 };
 export const useMostrarVentasDashboardPeriodoAnteriorQuery = () => {
   const { dataempresa } = useEmpresaStore();
-const { fechaInicio, fechaFin,setFechasAnteriores } = useDashboardStore();
+  const { fechaInicio, fechaFin, setFechasAnteriores } = useDashboardStore();
 
-  const { mostrarVentasDashboardPeriodoAnterior,mostrarVentasDashboard } = useReportesStore();
+  const { mostrarVentasDashboardPeriodoAnterior, mostrarVentasDashboard } = useReportesStore();
   const fechasAnteriores = setFechasAnteriores();
   return useQuery({
     queryKey: [
@@ -89,16 +89,66 @@ const { fechaInicio, fechaFin,setFechasAnteriores } = useDashboardStore();
     queryFn: () =>
       mostrarVentasDashboardPeriodoAnterior({
         _id_empresa: dataempresa?.id,
-        _fecha_inicio:  fechasAnteriores?.fechaAnteriorInicio,
+        _fecha_inicio: fechasAnteriores?.fechaAnteriorInicio,
         _fecha_fin: fechasAnteriores?.fechaAnteriorFin,
       }),
     enabled: !!dataempresa,
-    refetchOnWindowFocus:false
+    refetchOnWindowFocus: false,
+  });
+};
+export const useMostrarVentasXMetodoPagoQuery = () => {
+  const { dataempresa } = useEmpresaStore();
+  const { fechaInicio, fechaFin } = useDashboardStore();
+
+  const { mostrarVentasXMetodoPago } = useReportesStore();
+
+  return useQuery({
+    queryKey: [
+      "mostrar ventas x metodo pago",
+      {
+        _id_empresa: dataempresa?.id,
+        _fecha_inicio: fechaInicio,
+        _fecha_fin: fechaFin,
+      },
+    ],
+    queryFn: () =>
+      mostrarVentasXMetodoPago({
+        _id_empresa: dataempresa?.id,
+        _fecha_inicio: fechaInicio,
+        _fecha_fin: fechaFin,
+      }),
+    enabled: !!dataempresa,
+    refetchOnWindowFocus: false,
+  });
+};
+export const useMostrarVentasXCategoriaQuery = () => {
+  const { dataempresa } = useEmpresaStore();
+  const { fechaInicio, fechaFin } = useDashboardStore();
+
+  const { mostrarVentasXCategoria } = useReportesStore();
+
+  return useQuery({
+    queryKey: [
+      "mostrar ventas x categoria",
+      {
+        _id_empresa: dataempresa?.id,
+        _fecha_inicio: fechaInicio,
+        _fecha_fin: fechaFin,
+      },
+    ],
+    queryFn: () =>
+      mostrarVentasXCategoria({
+        _id_empresa: dataempresa?.id,
+        _fecha_inicio: fechaInicio,
+        _fecha_fin: fechaFin,
+      }),
+    enabled: !!dataempresa,
+    refetchOnWindowFocus: false,
   });
 };
 export const useGananciasDetalleVentaQuery = () => {
   const { dataempresa } = useEmpresaStore();
-const { fechaInicio, fechaFin } = useDashboardStore();
+  const { fechaInicio, fechaFin } = useDashboardStore();
 
   const { mostrarGananciasDetalleVenta } = useReportesStore();
 
@@ -118,6 +168,6 @@ const { fechaInicio, fechaFin } = useDashboardStore();
         _fecha_fin: fechaFin,
       }),
     enabled: !!dataempresa,
-    refetchOnWindowFocus:false
+    refetchOnWindowFocus: false
   });
 };

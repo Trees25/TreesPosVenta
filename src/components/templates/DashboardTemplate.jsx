@@ -3,13 +3,15 @@ import { Device } from "../../styles/breakpoints";
 import { DashboardHeader } from "../organismos/DashboardDesign/DashboardHeader";
 import { CardTotales } from "../organismos/DashboardDesign/CardTotales";
 import { ChartVentas } from "../organismos/DashboardDesign/ChartVentas";
-import {ChartProductosTop5} from "../organismos/DashboardDesign/ChartProductosTop5"
+import { ChartProductosTop5 } from "../organismos/DashboardDesign/ChartProductosTop5"
 import { CardMovimientosCajaLive } from "../organismos/DashboardDesign/CardMovimientosCajaLive";
-import {CardProductosTopMonto} from "../organismos/DashboardDesign/CardProductosTopMonto"
+import { CardProductosTopMonto } from "../organismos/DashboardDesign/CardProductosTopMonto"
+import { ChartVentasMetodoPago } from "../organismos/DashboardDesign/ChartVentasMetodoPago";
+import { ChartVentasCategoria } from "../organismos/DashboardDesign/ChartVentasCategoria";
 import { useReportesStore } from "../../store/ReportesStore";
 export const DashboardTemplate = () => {
-  const {totalventas,porcentajeCambio,totalCantidadDetalleVentas,totalGanancias} = useReportesStore() 
-   return (
+  const { totalventas, porcentajeCambio, totalCantidadDetalleVentas, totalGanancias } = useReportesStore()
+  return (
     <Container>
       <DashboardHeader />
       <MainContent>
@@ -24,7 +26,7 @@ export const DashboardTemplate = () => {
           </ContentTotales>
           <ContentTotales>
             <CardTotales
-             
+
               value={totalCantidadDetalleVentas}
               title="Cant. Productos vendidos"
               icon={"fluent-mdl2:product-variant"}
@@ -32,7 +34,7 @@ export const DashboardTemplate = () => {
           </ContentTotales>
           <ContentTotales>
             <CardTotales
-             
+
               value={totalGanancias}
               title="Ganancias"
               icon={"hugeicons:money-send-circle"}
@@ -43,12 +45,16 @@ export const DashboardTemplate = () => {
           <ChartVentas />
         </Area2>
         <Area3>
-        <ChartProductosTop5/>
+          <ChartProductosTop5 />
         </Area3>
         <Area4>
-        <CardMovimientosCajaLive/>
-        <CardProductosTopMonto/>
+          <CardMovimientosCajaLive />
+          <CardProductosTopMonto />
         </Area4>
+        <Area5>
+          <ChartVentasMetodoPago />
+          <ChartVentasCategoria />
+        </Area5>
       </MainContent>
     </Container>
   );
@@ -75,7 +81,8 @@ const MainContent = styled.div`
     grid-template-areas:
       "area1 area1 area3"
       "area2 area2 area3"
-      "area4 area4 area4";
+      "area4 area4 area4"
+      "area5 area5 area5";
     grid-template-columns: 2fr 1fr 1fr;
     gap: 20px;
   }
@@ -122,4 +129,19 @@ const ContentTotales = styled.div`
   text-align: center;
   border: 2px solid ${({ theme }) => theme.bordercolorDash};
   box-shadow: ${({ theme }) => theme.boxshadow};
+`;
+const Area5 = styled.section`
+  grid-area: area5;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  @media ${Device.desktop} {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  & > div {
+    background-color: ${({ theme }) => theme.body};
+    border: 2px solid ${({ theme }) => theme.bordercolorDash};
+    border-radius: 20px;
+    box-shadow: ${({ theme }) => theme.boxshadow};
+  }
 `;

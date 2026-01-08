@@ -5,8 +5,10 @@ export const useReportesStore = create((set, get) => ({
   totalventas: 0,
   totalventasAnterior: 0,
   porcentajeCambio: 0,
-  totalCantidadDetalleVentas:0,
-  totalGanancias:0,
+  totalCantidadDetalleVentas: 0,
+  totalGanancias: 0,
+  ventasXMetodoPago: [],
+  ventasXCategoria: [],
   resetearventas: () =>
     set({
       idventa: 0,
@@ -27,7 +29,7 @@ export const useReportesStore = create((set, get) => ({
       "dashboardsumarcantidaddetalleventa",
       p
     );
-set({totalCantidadDetalleVentas:data})
+    set({ totalCantidadDetalleVentas: data })
     return data;
   },
   mostrarVentasDashboardPeriodoAnterior: async (p) => {
@@ -46,11 +48,29 @@ set({totalCantidadDetalleVentas:data})
     const { data, error } = await supabase.rpc(
       "dashboardsumargananciadetalleventa",
       p
-    ); 
+    );
     if (error) {
       throw new Error(error.message);
     }
-    set({totalGanancias:data})
+    set({ totalGanancias: data })
+    return data;
+  },
+  mostrarVentasXMetodoPago: async (p) => {
+    const { data, error } = await supabase.rpc("reporte_ventas_metodo_pago", p);
+    if (error) {
+      console.error("Error en mostrarVentasXMetodoPago:", error);
+      throw new Error(error.message);
+    }
+    set({ ventasXMetodoPago: data });
+    return data;
+  },
+  mostrarVentasXCategoria: async (p) => {
+    const { data, error } = await supabase.rpc("reporte_ventas_categoria", p);
+    if (error) {
+      console.error("Error en mostrarVentasXCategoria:", error);
+      throw new Error(error.message);
+    }
+    set({ ventasXCategoria: data });
     return data;
   },
   setCalcularPorcentajeCambio: () => {
