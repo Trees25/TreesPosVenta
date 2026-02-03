@@ -16,13 +16,16 @@ import { useQuery } from "@tanstack/react-query";
 import { useAsignacionCajaSucursalStore } from "../store/AsignacionCajaSucursalStore";
 import { usePermisosStore } from "../store/PermisosStore";
 import { useMostrarSucursalAsignadasQuery } from "../tanstack/AsignacionesSucursalStack";
+import { TrialStatus } from "../components/moleculas/TrialStatus";
+import { Toaster } from "sonner";
+
 export function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stateMenu, setStateMenu] = useState(false);
 
   const { mostrarusuarios } = useUsuariosStore();
   const { mostrarempresa } = useEmpresaStore();
-    const { user } = UserAuth(); // Accedemos al contexto
+  const { user } = UserAuth(); // Accedemos al contexto
   const id_auth = user?.id; // Obtenemos el id_auth del usuario autenticado
   const { mostrarSucursalCajaAsignada } = useAsignacionCajaSucursalStore();
 
@@ -70,6 +73,17 @@ export function Layout({ children }) {
   if (error) {
     return <span>error layout...{error.message} </span>;
   }
+
+  // --- LOGIC FOR TRIAL STATUS ---
+  const esInvitado = datausuarios?.email === "tester1@gmail.com";
+  const isSuperUser = datausuarios?.correo === "trees.sanjuan@gmail.com";
+  let fechaLimiteRender = dataEmpresa?.fecha_vencimiento ? new Date(dataEmpresa.fecha_vencimiento) : null;
+
+  if (esInvitado && user?.created_at) {
+    // Si es invitado, vence a las 24 horas de la creación de la cuenta AUTH
+    fechaLimiteRender = new Date(new Date(user.created_at).getTime() + (24 * 60 * 60 * 1000));
+  }
+
   return (
     <Container className={sidebarOpen ? "active" : ""}>
       <section className="contentSidebar">
@@ -86,7 +100,11 @@ export function Layout({ children }) {
         {stateMenu ? <MenuMovil setState={() => setStateMenu(false)} /> : null}
       </section>
 
-      <Containerbody>{children}</Containerbody>
+      <Containerbody>
+        <Toaster position="top-center" richColors />
+        <TrialStatus fechaVencimiento={!isSuperUser ? fechaLimiteRender : null} />
+        {children}
+      </Containerbody>
     </Container>
   );
 }

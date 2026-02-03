@@ -8,8 +8,13 @@ import {
 
 // 🧠 Esta función verifica si existe una suscripción inicial, y si no, la crea
 export const VerificarOCrearSuscripcionInicial = async (p) => {
-  const responseVerificado = await verificarSuscripcionInicial({ id_auth: p.id_auth });
-  if (responseVerificado) return; // Si ya existe, no hace nada
+  try {
+    const responseVerificado = await verificarSuscripcionInicial({ id_auth: p.id_auth });
+    if (responseVerificado) return; // Si ya existe, no hace nada
+  } catch (error) {
+    console.warn("Error verificando suscripción inicial (Dev/Offline):", error.message);
+    return; // Fallback: asumimos que no se puede verificar/crear y seguimos
+  }
 
   const pCliente = {
     id_auth: p.id_auth,

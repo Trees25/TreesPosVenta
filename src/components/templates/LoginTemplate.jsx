@@ -26,35 +26,47 @@ export function LoginTemplate() {
 
   const { register, handleSubmit } = useForm();
   const queryClient = useQueryClient();
-  const { mutate } = useMutation({
+  const { mutate: loginMutate, mutateAsync: loginAsync } = useMutation({
     mutationKey: ["iniciar con email"],
     mutationFn: loginEmail,
     onError: (error) => {
-      toast.error(`Error: ${error.message}`);
+      // toast.error(`Error: ${error.message}`); // Handled manually in tester flow
     },
   });
-  const { mutate: mutateTester, isPending } = useMutation({
+  const { mutate: registerMutate, mutateAsync: registerAsync, isPending } = useMutation({
     mutationKey: ["iniciar con email tester"],
     mutationFn: crearUserYLogin,
     onError: (error) => {
-      toast.error(`Error: ${error.message}`);
-    },
-    onSuccess: () => {
-      //queryClient.invalidateQueries();
-      // window.location.reload();
+      // toast.error(`Error: ${error.message}`);
     },
   });
-  const manejadorEmailSesionTester = () => {
-    mutateTester({ email: "tester1@gmail.com", password: "123456" });
+
+  const manejadorEmailSesionTester = async () => {
+    try {
+      await loginAsync({ email: "tester1@gmail.com", password: "123456" });
+    } catch (error) {
+      if (error.message.includes("Invalid login credentials") || error.message.includes("not found")) {
+        try {
+          await registerAsync({ email: "tester1@gmail.com", password: "123456" });
+          toast.success("Usuario invitado restaurado. Ingresando...");
+          setTimeout(() => window.location.reload(), 1500);
+        } catch (regError) {
+          toast.error("Error al restaurar invitado: " + regError.message);
+        }
+      } else {
+        toast.error("Error Login Invitado: " + error.message);
+      }
+    }
   };
+
   const manejadorEmailSesion = (data) => {
-    mutate({ email: data.email, password: data.password });
+    loginMutate({ email: data.email, password: data.password });
   };
   const manejarCrearUSerTester = () => {
     const response = Generarcodigo({ id: 2 });
     const gmail = "@gmail.com";
     const correoCompleto = response.toLowerCase() + gmail;
-    mutateTester({ email: correoCompleto, password: "123456" });
+    registerMutate({ email: correoCompleto, password: "123456" });
   };
   return (
     <Container>
@@ -91,61 +103,61 @@ export function LoginTemplate() {
         )}
         {stateModo === "empleado"
           ? stateModos === false && (
-              <PanelModo>
-                <VolverBtn funcion={() => setStateModos(!stateModos)} />
-                <span>Modo empleado</span>
-                <form onSubmit={handleSubmit(manejadorEmailSesion)}>
-                  <InputText2>
-                    <input
-                      className="form__field"
-                      placeholder="email"
-                      type="text"
-                      {...register("email", { required: true })}
-                    />
-                  </InputText2>
-                  <InputText2>
-                    <input
-                      className="form__field"
-                      placeholder="contraseña"
-                      type="password"
-                      {...register("password", { required: true })}
-                    />
-                  </InputText2>
-                  <Btn1
-                    border="2px"
-                    titulo="INGRESAR"
-                    bgcolor="#1CB0F6"
-                    color="255,255,255"
-                    width="100%"
+            <PanelModo>
+              <VolverBtn funcion={() => setStateModos(!stateModos)} />
+              <span>Modo empleado</span>
+              <form onSubmit={handleSubmit(manejadorEmailSesion)}>
+                <InputText2>
+                  <input
+                    className="form__field"
+                    placeholder="email"
+                    type="text"
+                    {...register("email", { required: true })}
                   />
-                </form>
-              </PanelModo>
-            )
-          : stateModos === false && (
-              <PanelModo>
-                <VolverBtn funcion={() => setStateModos(!stateModos)} />
-                <span>Modo super admin</span>
+                </InputText2>
+                <InputText2>
+                  <input
+                    className="form__field"
+                    placeholder="contraseña"
+                    type="password"
+                    {...register("password", { required: true })}
+                  />
+                </InputText2>
                 <Btn1
-                  disabled={isPending}
-                  funcion={manejarCrearUSerTester}
                   border="2px"
-                  titulo="MODO INVITADO"
-                  bgcolor="#f6ce1c"
+                  titulo="INGRESAR"
+                  bgcolor="#1CB0F6"
                   color="255,255,255"
                   width="100%"
                 />
-                <Linea>
-                  <span>0</span>
-                </Linea>
-                <Btn1
-                  border="2px"
-                  funcion={loginGoogle}
-                  titulo="Google"
-                  bgcolor="#fff"
-                  icono={<v.iconogoogle />}
-                />
-              </PanelModo>
-            )}
+              </form>
+            </PanelModo>
+          )
+          : stateModos === false && (
+            <PanelModo>
+              <VolverBtn funcion={() => setStateModos(!stateModos)} />
+              <span>Modo super admin</span>
+              <Btn1
+                disabled={isPending}
+                funcion={manejarCrearUSerTester}
+                border="2px"
+                titulo="MODO INVITADO"
+                bgcolor="#f6ce1c"
+                color="255,255,255"
+                width="100%"
+              />
+              <Linea>
+                <span>0</span>
+              </Linea>
+              <Btn1
+                border="2px"
+                funcion={loginGoogle}
+                titulo="Google"
+                bgcolor="#fff"
+                icono={<v.iconogoogle />}
+              />
+            </PanelModo>
+          )}
       </div>
       <Footer />
     </Container>

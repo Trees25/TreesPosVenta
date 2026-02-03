@@ -9,7 +9,7 @@ export const useEmpresaStore = create((set) => ({
   },
   insertarempresa: async (p) => {
     const response = await InsertarEmpresa(p);
-    console.log("respuesta empresa", response);
+
   },
   editarEmpresa: async (p, fileold, filenew) => {
     await EditarEmpresa(p, fileold, filenew)

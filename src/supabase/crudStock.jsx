@@ -9,7 +9,7 @@ export async function InsertarStock(p) {
 }
 export async function EditarStock(p, tipo) {
   const { error } = await supabase.rpc(
-    tipo === "ingreso" ? "incrementarstock": "reducirstock",p
+    tipo === "ingreso" ? "incrementarstock" : "reducirstock", p
   );
   if (error) {
     throw new Error(error.message);
@@ -32,4 +32,24 @@ export async function MostrarStockXAlmacenesYProducto(p) {
     .eq("id_producto", p.id_producto)
     .gt("stock", 0);
   return data;
+}
+
+export async function MostrarStockAlertas(p) {
+  const { data, error } = await supabase.rpc("mostrar_alertas_stock", {
+    _id_empresa: p.id_empresa,
+  });
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+}
+
+export async function ActualizarStockMinimo(p) {
+  const { error } = await supabase
+    .from(tabla)
+    .update({ stock_minimo: p.stock_minimo })
+    .eq("id", p.id);
+  if (error) {
+    throw new Error(error.message);
+  }
 }

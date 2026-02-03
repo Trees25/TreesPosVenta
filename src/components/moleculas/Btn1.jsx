@@ -13,6 +13,7 @@ export function Btn1({
   height,
   decorador,
   imagen,
+  className
 }) {
   return (
     <Container
@@ -21,10 +22,11 @@ export function Btn1({
       $color={color}
       type="submit"
       $bgcolor={bgcolor}
-      onClick={funcion }
+      onClick={funcion}
       $border={border}
       $decorador={decorador}
       $height={height}
+      className={className}
     >
       <section className="content">
         <Icono $color={color}>{icono}</Icono>

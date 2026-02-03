@@ -66,6 +66,7 @@ export * from './pages/Home';
 export * from './pages/Login';
 export * from './pages/POS';
 export * from './pages/Productos';
+export * from './pages/Planes';
 export * from './routers/routes';
 export * from './store/AlmacenesStore';
 export * from './store/AuthStore';

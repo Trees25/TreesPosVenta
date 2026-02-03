@@ -10,8 +10,18 @@ export async function InsertarProductos(p) {
   return data;
 }
 
+export async function InsertarProductosMasivo(data) {
+  const { error } = await supabase.from(tabla).insert(data);
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 export async function MostrarProductos(p) {
-  let query = supabase.from(tabla).select("*").eq("id_empresa", p.id_empresa);
+  const pag = p.pagina || 1;
+  const from = (pag - 1) * 6;
+  const to = from + 5;
+  let query = supabase.from(tabla).select("*", { count: "exact" }).eq("id_empresa", p.id_empresa).range(from, to);
 
   if (p.id_categoria) {
     query = query.eq("id_categoria", p.id_categoria);
@@ -20,11 +30,11 @@ export async function MostrarProductos(p) {
     query = query.eq("id_proveedor", p.id_proveedor);
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
   if (error) {
     throw new Error(error.message);
   }
-  return data;
+  return { data, count };
 }
 
 export async function BuscarProductos(p) {

@@ -21,9 +21,9 @@ export function RegistrarUsuarios({ accion, dataSelect, onClose }) {
   const queryClient = useQueryClient();
   const {
     cajaSelectItem,
- 
+
     mostrarCajaXSucursal,
-   
+
   } = useCajasStore();
   const { insertarUsuario, itemSelect, editarUsuarios } = useUsuariosStore();
   const { dataempresa } = useEmpresaStore();
@@ -67,14 +67,14 @@ export function RegistrarUsuarios({ accion, dataSelect, onClose }) {
         id_rol: rolesItemSelect?.id,
 
         //datos asignacion caja y sucursal
-       
-        
+
+
       };
-      console.log("pEditar",p)
+      console.log("pEditar", p)
       await editarUsuarios(p);
     } else {
       const p = {
-        
+
         nombres: data.nombres,
         nro_doc: data.nro_doc,
         telefono: data.telefono,
@@ -94,7 +94,11 @@ export function RegistrarUsuarios({ accion, dataSelect, onClose }) {
     mutationKey: ["insertar usuarios"],
     mutationFn: insertar,
     onError: (error) => {
-      toast.error(`Error: ${error.message}`);
+      if (error?.message?.includes("users_email_partial_key")) {
+        toast.error("Este correo ya está registrado. Intente con otro.");
+      } else {
+        toast.error(`Error: ${error?.message || "Error desconocido"}`);
+      }
     },
     onSuccess: () => {
       toast.success("Usuario registrado correctamente");
@@ -132,7 +136,7 @@ export function RegistrarUsuarios({ accion, dataSelect, onClose }) {
                     />
                   }
                 >
-                  <input disabled ={accion==="Editar"?true:false}
+                  <input disabled={accion === "Editar" ? true : false}
                     className="form__field"
                     type="text"
                     {...register("email", {
@@ -153,7 +157,7 @@ export function RegistrarUsuarios({ accion, dataSelect, onClose }) {
                     />
                   }
                 >
-                  <input disabled ={accion==="Editar"?true:false}
+                  <input disabled={accion === "Editar" ? true : false}
                     className="form__field"
                     defaultValue={
                       accion === "Editar" ? dataSelect?.descripcion : ""

@@ -78,6 +78,22 @@ export function RegistrarInventario() {
 
   const { mutate, isPending } = useInsertarMovStockMutation();
 
+  const { actualizarStockMinimo } = useStockStore(); // Added
+
+  const handleSave = async (data) => {
+    // 1. Insert Movement
+    mutate(data);
+
+    // 2. Update Stock Minimo if present and valid
+    if (dataStock?.id && data.stock_minimo_edit) {
+      await actualizarStockMinimo({
+        id: dataStock.id,
+        stock_minimo: parseFloat(data.stock_minimo_edit)
+      });
+      toast.success("Stock mínimo actualizado");
+    }
+  };
+
   const resetFuction = () => {
     reset();
     setTipo("ingreso");
@@ -151,7 +167,7 @@ export function RegistrarInventario() {
             </ContainerSelector>
           </section>
           {productosItemSelect?.maneja_inventarios ? (
-            <form className="formulario" onSubmit={handleSubmit(mutate)}>
+            <form className="formulario" onSubmit={handleSubmit(handleSave)}>
               <section className="form-subcontainer">
                 <article>
                   <InputText icono={<v.iconoflechaderecha />}>
@@ -166,6 +182,17 @@ export function RegistrarInventario() {
                     {errors.cantidad?.type === "required" && (
                       <p>Campo requerido</p>
                     )}
+                  </InputText>
+                </article>
+                <article>
+                  <InputText icono={<v.iconoflechaderecha />}>
+                    <input
+                      className="form__field"
+                      defaultValue={dataStock?.stock_minimo}
+                      type="number"
+                      {...register("stock_minimo_edit")}
+                    />
+                    <label className="form__label">Stock Mínimo (Editar)</label>
                   </InputText>
                 </article>
                 <article>

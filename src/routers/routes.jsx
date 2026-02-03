@@ -11,6 +11,7 @@ import {
   PageNot,
   Empresa,
   ClientesProveedores,
+  Planes,
 } from "../index";
 import { BasicosConfig } from "../components/organismos/EmpresaConfigDesign/BasicosConfig";
 import { MonedaConfig } from "../components/organismos/EmpresaConfigDesign/MonedaConfig";
@@ -58,7 +59,7 @@ export function MyRoutes() {
           </Layout>
         }
       />
-       <Route
+      <Route
         path="/reportes"
         element={
           <Layout>
@@ -229,6 +230,16 @@ export function MyRoutes() {
           <Layout>
             <ProtectedRoute accessBy="authenticated">
               <Almacenes />
+            </ProtectedRoute>
+          </Layout>
+        }
+      />
+      <Route
+        path="/planes"
+        element={
+          <Layout>
+            <ProtectedRoute accessBy="authenticated">
+              <Planes />
             </ProtectedRoute>
           </Layout>
         }

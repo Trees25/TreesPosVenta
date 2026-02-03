@@ -6,25 +6,39 @@ import {
   useAuthStore,
 } from "../../../index";
 import { v } from "../../../styles/variables";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useQueryClient } from "@tanstack/react-query";
 
 
 export function Sidebar({ state, setState }) {
-  const {cerrarSesion} = useAuthStore()
+  const navigate = useNavigate();
+  const { cerrarSesion } = useAuthStore()
   const queryClient = useQueryClient()
 
- const salir = async () => {
-  await cerrarSesion();
-  queryClient.clear();
-  navigate("/login", { replace: true });
-  setTimeout(() => {
-    if (localStorage.getItem("sb-yourprojectid-auth-token")) {
-      window.location.href = "/login"; // backup si Supabase no limpió bien
+  const salir = async () => {
+    try {
+      await cerrarSesion();
+    } catch (error) {
+      console.log("Error en cerrarSesion, continuando con limpieza local...");
     }
-  }, 500);
-};
+    // Always clear local state and navigate
+    queryClient.clear();
+
+    // Limpiar tokens correctamente (usando el ID del proyecto que vi en los errores o borrando todo)
+    localStorage.removeItem("sb-rmxmggsntujfktlpuauz-auth-token");
+    localStorage.removeItem("sb-vhwlpfcbsgbedjdnivml-auth-token"); // Por si acaso la otra instancia
+    // Opción nuclear si lo anterior falla: localStorage.clear();
+
+    navigate("/login", { replace: true });
+
+    // Backup refresh solo si no estamos ya en login
+    setTimeout(() => {
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+    }, 500);
+  };
 
   return (
     <Main $isopen={state.toString()}>
@@ -83,11 +97,11 @@ export function Sidebar({ state, setState }) {
                 className="Linkicon"
                 icon="heroicons:arrow-left-circle-solid"
               />
-              <span  className={state ? "label_ver" : "label_oculto"}>SALIR</span>
+              <span className={state ? "label_ver" : "label_oculto"}>SALIR</span>
             </section>
           </div>
-         
-         
+
+
         </div>
 
         <ToggleTema />
@@ -133,7 +147,7 @@ const Container = styled.div`
       cursor: pointer;
       transition: 0.3s ease;
       transform: ${({ $isopen }) =>
-          $isopen === "true" ? `scale(0.7)` : `scale(1.5)`}
+    $isopen === "true" ? `scale(0.7)` : `scale(1.5)`}
         rotate(${({ theme }) => theme.logorotate});
       img {
         width: 100%;
@@ -229,7 +243,7 @@ const Main = styled.div`
     transition: all 0.2s;
     z-index: 3;
     transform: ${({ $isopen }) =>
-      $isopen === "true" ? `translateX(173px) rotate(3.142rad)` : `initial`};
+    $isopen === "true" ? `translateX(173px) rotate(3.142rad)` : `initial`};
     color: ${(props) => props.theme.text};
   }
 `;

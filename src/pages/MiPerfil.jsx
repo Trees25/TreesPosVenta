@@ -3,15 +3,29 @@ import styled from "styled-components";
 import { InputText2 } from "../components/organismos/formularios/InputText2";
 import { Btn1 } from "../components/moleculas/Btn1";
 import { useForm } from "react-hook-form";
+import { planes } from "../data/planes";
 
 import { slideBackground } from "../styles/keyframes";
 
 import { Toaster } from "sonner";
 import { useUsuariosStore } from "../store/UsuariosStore";
+import { useSuscripcionesStore } from "../store/SuscripcionStore";
 import { useEditarPerfilMutation } from "../tanstack/UsuariosStack";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
 export const MiPerfil = () => {
+  const navigate = useNavigate();
   const { datausuarios } = useUsuariosStore();
-  const {mutate,isPending} = useEditarPerfilMutation()
+  const { dataSuscripcion, mostrarSuscripcion } = useSuscripcionesStore();
+  const { mutate, isPending } = useEditarPerfilMutation()
+
+  useEffect(() => {
+    if (datausuarios?.id) {
+      mostrarSuscripcion({ id_auth: datausuarios.id_auth });
+    }
+  }, [datausuarios]);
+
   const {
     register,
     formState: { errors },
@@ -25,16 +39,19 @@ export const MiPerfil = () => {
   });
   return (
     <Container>
-       <Toaster position="top-right" />
+      <Toaster position="top-right" />
       {isPending ? (
         <span>guardando...🐖</span>
       ) : (
         <>
-          <Title>Mi Perfil</Title> 
+          <Title>Mi Perfil</Title>
           <Avatar>
             <ContentRol>
               <span>{datausuarios?.roles?.nombre} </span>
             </ContentRol>
+            <PlanBadge>
+              <span>{dataSuscripcion?.nombre_plan || "Plan Gratuito"}</span>
+            </PlanBadge>
             <span className="nombre">{datausuarios?.nombres}</span>
           </Avatar>
           <form onSubmit={handleSubmit(mutate)}>
@@ -88,6 +105,38 @@ export const MiPerfil = () => {
             <br></br>
             <Btn1 bgcolor="#0930bb" color="#fff" titulo="GUARDAR CAMBIOS" />
           </form>
+
+          <SubscriptionSection>
+            <h2>Tu Suscripción</h2>
+            <div className="plan-details">
+              <p><strong>Plan Actual:</strong> {
+                (() => {
+                  const dbName = dataSuscripcion?.planes?.nombre;
+                  const localName = planes.find(p => p.id == dataSuscripcion?.id_plan)?.nombre;
+                  const rawName = dataSuscripcion?.nombre_plan;
+                  const finalName = dbName || localName || rawName || "Gratuito";
+                  return dataSuscripcion?.estado === "trial"
+                    ? `${finalName} (Prueba Gratuita)`
+                    : finalName;
+                })()
+              }</p>
+              <p><strong>Estado:</strong> {
+                !dataSuscripcion?.fecha_fin ? "Indefinido" :
+                  new Date(dataSuscripcion.fecha_fin) < new Date() ? "Vencido" : "Activo"
+              }</p>
+              <p><strong>Vence el:</strong> {
+                dataSuscripcion?.fecha_fin ? new Date(dataSuscripcion.fecha_fin).toLocaleDateString() : "-"
+              }</p>
+            </div>
+
+            <Btn1
+              titulo="VER PLANES Y PAGOS"
+              bgcolor="#e74c3c"
+              color="#fff"
+              funcion={() => navigate("/planes")}
+              className="bypass-penalty"
+            />
+          </SubscriptionSection>
         </>
       )}
     </Container>
@@ -100,6 +149,19 @@ const ContentRol = styled.div`
   position: absolute;
   top: -10px;
   right: 10px;
+  padding: 5px 8px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #fff;
+`;
+
+const PlanBadge = styled.div`
+  background-color: #ff0055;
+  border: 2px solid #fff;
+  border-radius: 8px;
+  position: absolute;
+  top: -10px;
+  left: 10px;
   padding: 5px 8px;
   font-size: 12px;
   font-weight: bold;
@@ -173,4 +235,25 @@ const Avatar = styled.div`
 const Label = styled.label`
   display: block;
   margin: 10px 0 5px;
+`;
+
+const SubscriptionSection = styled.div`
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #ccc;
+  h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+    color: ${({ theme }) => theme.text};
+  }
+  .plan-details {
+    margin-bottom: 20px;
+    p {
+      margin-bottom: 10px;
+      color: ${({ theme }) => theme.text};
+      strong {
+        color: ${({ theme }) => theme.text};
+      }
+    }
+  }
 `;

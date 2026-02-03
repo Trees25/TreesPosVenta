@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import {
   MostrarSucursales,
-  
-  MostrarCajasXSucursal,InsertarSucursal,EditarSucursal,EliminarSucursal
+
+  MostrarCajasXSucursal, InsertarSucursal, EditarSucursal, EliminarSucursal
 } from "../index";
 
 export const useSucursalesStore = create((set) => ({
@@ -10,7 +10,7 @@ export const useSucursalesStore = create((set) => ({
   setStateSucursal: (p) => set({ stateSucursal: p }),
   accion: "",
   setAccion: (p) => set({ accion: p }),
-  
+
   sucursalesItemSelect: [],
   selectSucursal: (p) => {
     set({ sucursalesItemSelect: p });
@@ -25,6 +25,7 @@ export const useSucursalesStore = create((set) => ({
 
   mostrarCajasXSucursal: async (p) => {
     const response = await MostrarCajasXSucursal(p);
+    set({ dataSucursales: response }); // Update global state for count logic
     return response;
   },
   insertarSucursal: async (p) => {

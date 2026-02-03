@@ -7,15 +7,20 @@ import { useQuery } from "@tanstack/react-query";
 import { useMovStockStore } from "../store/MovStockStore";
 import { useEmpresaStore } from "../store/EmpresaStore";
 import { useProductosStore } from "../store/ProductosStore";
+import { useStockStore } from "../store/StockStore";
 import { Title } from "../components/atomos/Title";
 import { Btn1 } from "../components/moleculas/Btn1";
 import { useState } from "react";
 import { BuscadorList } from "../components/ui/lists/BuscadorList";
 import { useGlobalStore } from "../store/GlobalStore";
+import { AlertasStock } from "../components/moleculas/AlertasStock";
+import { v } from "../styles/variables"; // Ensure variables are imported for icons if needed, though Btn1 usually takes text or icons
+
 export const Inventario = () => {
   const { mostrarMovStock } = useMovStockStore();
   const { dataempresa } = useEmpresaStore();
   const { buscarProductos, buscador } = useProductosStore();
+  const { mostrarStockAlertas } = useStockStore();
   const { productosItemSelect, setBuscador, selectProductos } =
     useProductosStore();
   const [openRegistro, SetopenRegistro] = useState(false);
@@ -23,6 +28,13 @@ export const Inventario = () => {
 
   const [dataSelect, setdataSelect] = useState([]);
   const [isExploding, setIsExploding] = useState(false);
+
+  const { data: dataStockAlertas } = useQuery({
+    queryKey: ["mostrar alertas stock", dataempresa?.id],
+    queryFn: () => mostrarStockAlertas({ id_empresa: dataempresa?.id }),
+    enabled: !!dataempresa,
+  });
+
   const {
     data: dataproductos,
     isLoading: isLoadingBuscarProductos,
@@ -61,6 +73,7 @@ export const Inventario = () => {
   return (
     <Container>
       {stateClose && <RegistrarInventario />}
+      <AlertasStock data={dataStockAlertas} />
 
       <section className="area1">
         {productosItemSelect?.nombre && (
@@ -69,7 +82,6 @@ export const Inventario = () => {
             Producto: {" "}<strong>{productosItemSelect?.nombre}</strong>{" "}
           </span>
         )}
-|
         <Title>Inventario</Title>
         <Btn1 funcion={nuevoRegistro} titulo="Registrar" />
       </section>

@@ -26,6 +26,7 @@ import { SelectList } from "../../ui/lists/SelectList";
 import { useStockStore } from "../../../store/StockStore";
 import { toast } from "sonner";
 import { BtnClose } from "../../ui/buttons/BtnClose";
+import { useNavigate } from "react-router-dom";
 
 export function RegistrarProductos({
   onClose,
@@ -34,6 +35,7 @@ export function RegistrarProductos({
   setIsExploding,
   state,
 }) {
+  const navigate = useNavigate();
   if (!state) return;
   //validar checkboxs
   const [isChecked1, setIsChecked1] = useState(true);
@@ -72,6 +74,7 @@ export function RegistrarProductos({
     setAlmacenSelectItem,
   } = useAlmacenesStore();
   const [stateInventarios, setStateInventarios] = useState(false);
+  const [stateVencimiento, setStateVencimiento] = useState(false);
   const [stateEnabledStock, setStateEnabledStock] = useState(false);
 
   const [stateSucursalesLista, setStateSucursalesLista] = useState(false);
@@ -147,6 +150,8 @@ export function RegistrarProductos({
         _id_empresa: dataempresa.id,
         _sevende_por: sevendepor,
         _maneja_inventarios: stateInventarios,
+        _fecha_vencimiento: stateVencimiento ? data.fecha_vencimiento : null,
+        _dias_alerta: stateVencimiento ? parseInt(data.dias_alerta) : 7,
       };
       console.log(p);
       await editarProductos(p);
@@ -174,6 +179,8 @@ export function RegistrarProductos({
         _sevende_por: sevendepor,
         _maneja_inventarios: stateInventarios,
         _maneja_multiprecios: false,
+        _fecha_vencimiento: stateVencimiento ? data.fecha_vencimiento : null,
+        _dias_alerta: stateVencimiento ? parseInt(data.dias_alerta) : 7,
       };
 
       const id_producto_nuevo = await insertarProductos(p);
@@ -273,20 +280,18 @@ export function RegistrarProductos({
       generarCodigoInterno();
     } else {
       selectCategoria({
-        id:dataSelect.id_categoria,
-        nombre:dataSelect.categoria
+        id: dataSelect.id_categoria,
+        nombre: dataSelect.categoria
       })
       setRandomCodeinterno(dataSelect.codigo_interno);
       setRandomCodebarras(dataSelect.codigo_barras);
       dataSelect.sevende_por === "UNIDAD"
         ? handleCheckboxChange(1)
         : handleCheckboxChange(0);
-      dataSelect.maneja_inventarios
-        ? setStateInventarios(true)
-        : setStateInventarios(false);
-      dataSelect.maneja_inventarios
-        ? setStateEnabledStock(true)
-        : setStateEnabledStock(false);
+
+      setStateInventarios(!!dataSelect.maneja_inventarios);
+      setStateEnabledStock(!!dataSelect.maneja_inventarios);
+      setStateVencimiento(!!dataSelect.fecha_vencimiento);
     }
   }, []);
   //#endregion validar_accion
@@ -385,7 +390,7 @@ export function RegistrarProductos({
                     onChange={handleChangeinterno}
                     type="number"
                     placeholder="codigo interno"
-                    // {...register("codigo_interno")}
+                  // {...register("codigo_interno")}
                   />
                   <label className="form__label">codigo interno</label>
                 </InputText>
@@ -414,9 +419,46 @@ export function RegistrarProductos({
 
               <ContainerSelector>
                 <label>Categoria: </label>
-                <SelectList data={datacategorias} itemSelect={categoriaItemSelect} onSelect={selectCategoria} displayField="nombre"/>
-                
+                <SelectList data={datacategorias} itemSelect={categoriaItemSelect} onSelect={selectCategoria} displayField="nombre" />
+
               </ContainerSelector>
+
+              <ContainerSelector>
+                <label>¿Tiene Vencimiento?: </label>
+                <Switch1
+                  state={stateVencimiento}
+                  setState={() => setStateVencimiento(!stateVencimiento)}
+                />
+              </ContainerSelector>
+
+              {stateVencimiento && (
+                <>
+                  <article>
+                    <InputText icono={<v.iconoflechaderecha />}>
+                      <input
+                        className="form__field"
+                        defaultValue={dataSelect.fecha_vencimiento}
+                        type="date"
+                        {...register("fecha_vencimiento")}
+                      />
+                      <label className="form__label">Fecha Vencimiento</label>
+                    </InputText>
+                  </article>
+                  <article>
+                    <InputText icono={<v.iconoflechaderecha />}>
+                      <input
+                        className="form__field"
+                        defaultValue={dataSelect.dias_alerta || 7}
+                        type="number"
+                        placeholder="Días alerta"
+                        {...register("dias_alerta")}
+                      />
+                      <label className="form__label">Avisar (días) antes</label>
+                    </InputText>
+                  </article>
+                </>
+              )}
+
               <ContainerSelector>
                 <label>Controlar stock: </label>
                 <Switch1
@@ -448,7 +490,7 @@ export function RegistrarProductos({
                   {stateEnabledStock && dataStockXAlmacenYProducto && (
                     <ContainerMensajeStock>
                       <span>
-                        💀 para editar el stock vaya al módulo de kardex
+                        💀 para editar el stock <strong onClick={() => { onClose(); navigate("/inventario"); }} style={{ cursor: "pointer", textDecoration: "underline" }}>vaya al módulo de inventario</strong>
                       </span>
                     </ContainerMensajeStock>
                   )}

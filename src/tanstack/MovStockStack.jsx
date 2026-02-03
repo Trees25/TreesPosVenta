@@ -30,16 +30,16 @@ import { useGlobalStore } from "../store/GlobalStore";
 // };
 export const useInsertarMovStockMutation = () => {
   const queryClient = useQueryClient();
-  const {  productosItemSelect,resetProductosItemSelect } = useProductosStore();
- const { itemSelect ,setStateClose} = useGlobalStore();
+  const { productosItemSelect, resetProductosItemSelect } = useProductosStore();
+  const { itemSelect, setStateClose } = useGlobalStore();
   const { tipo, insertarMovStock } = useMovStockStore();
-  const {  editarStock,dataStockXAlmacenYProducto:dataStock } = useStockStore();
+  const { editarStock, dataStockXAlmacenYProducto: dataStock } = useStockStore();
   const { almacenSelectItem } =
     useAlmacenesStore();
-   
+
   const { editarPreciosProductos } = useProductosStore();
   const fechaActual = useFormattedDate();
-  console.log("dataStock",dataStock)
+  console.log("dataStock", dataStock)
   return useMutation({
     mutationKey: ["insertar movimiento stock"],
     mutationFn: async (data) => {
@@ -65,14 +65,10 @@ export const useInsertarMovStockMutation = () => {
           (productosItemSelect?.precio_venta + data.precio_venta) / 2
         ),
       };
-      console.log("pMovimientoStock",pMovimientoStock)
-      console.log("pStock",pStock)
-      console.log("pProductos",pProductos)
-      console.log("tipo",tipo)
-      
+
       await insertarMovStock(pMovimientoStock);
-       await editarStock(pStock, tipo);
-       await editarPreciosProductos(pProductos);
+      await editarStock(pStock, tipo);
+      await editarPreciosProductos(pProductos);
     },
     onError: (error) => {
       toast.error("Error:" + error.message);

@@ -41,7 +41,7 @@ export const useUsuariosStore = create((set) => ({
   },
   insertarUsuario: async (p) => {
     const selectModules = usePermisosStore.getState().selectedModules || [];
-    console.log("Módulos seleccionados:", selectModules);
+
     const data = await InsertarCredencialesUser({
       email: p.email,
       pass: p.pass,
@@ -60,13 +60,13 @@ export const useUsuariosStore = create((set) => ({
       id_caja: p.id_caja,
     });
     if (Array.isArray(selectModules) && selectModules.length > 0) {
-      selectModules.forEach(async (idModule) => {
+      for (const idModule of selectModules) {
         let p = {
           id_usuario: dataUserNew?.id,
           idmodulo: idModule,
         };
         await InsertarPermisos(p);
-      });
+      }
     } else {
       throw new Error("No hay módulos seleccionados");
     }

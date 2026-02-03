@@ -4,6 +4,8 @@ import {
   InsertarStock,
   MostrarStockXAlmacenesYProducto,
   MostrarStockXAlmacenYProducto,
+  MostrarStockAlertas,
+  ActualizarStockMinimo
 } from "../supabase/crudStock";
 
 export const useStockStore = create((set) => ({
@@ -26,7 +28,16 @@ export const useStockStore = create((set) => ({
     set({ dataStockXAlmacenesYProducto: response });
     return response;
   },
-  editarStock: async (p,tipo) => {
-    await EditarStock(p,tipo);
+  editarStock: async (p, tipo) => {
+    await EditarStock(p, tipo);
   },
+  dataStockAlertas: [],
+  mostrarStockAlertas: async (p) => {
+    const response = await MostrarStockAlertas(p);
+    set({ dataStockAlertas: response });
+    return response;
+  },
+  actualizarStockMinimo: async (p) => {
+    await ActualizarStockMinimo(p);
+  }
 }));

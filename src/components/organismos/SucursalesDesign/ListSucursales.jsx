@@ -40,7 +40,7 @@ export const ListSucursales = () => {
   const agregarCaja = (p) => {
     setAccionCaja("Nuevo");
     setStateCaja(true);
-    console.log(p);
+
     setCajaSelectItem(p);
   };
   const editarCaja = (p) => {
@@ -96,7 +96,7 @@ export const ListSucursales = () => {
       });
     });
   };
-  const {mutate:doDeleteSucursal} = useMutation({
+  const { mutate: doDeleteSucursal } = useMutation({
     mutationKey: ["eliminar Sucursal"],
     mutationFn: controladorEliminarSucursal,
     onError: (error) => {
@@ -107,7 +107,7 @@ export const ListSucursales = () => {
       queryClient.invalidateQueries(["mostrar Cajas XSucursal"]);
     },
   });
-  const {mutate:doDeleteCaja} = useMutation({
+  const { mutate: doDeleteCaja } = useMutation({
     mutationKey: ["eliminar caja"],
     mutationFn: controladorEliminarCaja,
     onError: (error) => {
@@ -133,7 +133,7 @@ export const ListSucursales = () => {
                     icon="wpf:delete"
                     width="15"
                     height="15"
-                    className="deleteicon" onClick={()=>doDeleteSucursal(sucursal?.id)}
+                    className="deleteicon" onClick={() => doDeleteSucursal(sucursal?.id)}
                   />
                 )}
 
@@ -160,7 +160,7 @@ export const ListSucursales = () => {
                           icon="wpf:delete"
                           width="15"
                           height="15"
-                          className="deleteicon" onClick={()=>doDeleteCaja(caja?.id)}
+                          className="deleteicon" onClick={() => doDeleteCaja(caja?.id)}
                         />
                       )}
 

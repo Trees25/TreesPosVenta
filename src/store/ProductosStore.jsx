@@ -1,11 +1,16 @@
 import { create } from "zustand";
 import {
-  BuscarProductos, MostrarProductos, EliminarProductos, InsertarProductos, EditarProductos, Generarcodigo, ActualizarPreciosMasivo,
+  BuscarProductos, MostrarProductos, EliminarProductos, InsertarProductos, EditarProductos, Generarcodigo, ActualizarPreciosMasivo, InsertarProductosMasivo,
   supabase
 } from "../index";
 const tabla = "productos"
 export const useProductosStore = create((set, get) => ({
   refetchs: null,
+  insertarProductosMasivo: async (data) => {
+    await InsertarProductosMasivo(data);
+    const { refetchs } = get();
+    refetchs && refetchs();
+  },
   buscador: "",
   setBuscador: (p) => {
     set({ buscador: p });
@@ -22,20 +27,27 @@ export const useProductosStore = create((set, get) => ({
   setIdProveedor: (p) => {
     set({ idProveedor: p });
   },
+  pagina: 1,
+  setPagina: (p) => {
+    set({ pagina: p });
+  },
+  totalRegistros: 0,
   parametros: {},
   mostrarProductos: async (p) => {
-    const { idCategoria, idProveedor } = get();
-    const response = await MostrarProductos({ ...p, id_categoria: idCategoria?.id, id_proveedor: idProveedor?.id });
+    const { idCategoria, idProveedor, pagina } = get();
+    const response = await MostrarProductos({ ...p, id_categoria: idCategoria?.id, id_proveedor: idProveedor?.id, pagina: pagina });
     set({ parametros: p });
-    if (response && response.length > 0) {
-      set({ dataProductos: response });
-      set({ productosItemSelect: response[0] });
+    set({ totalRegistros: response.count });
+
+    if (response.data && response.data.length > 0) {
+      set({ dataProductos: response.data });
+      set({ productosItemSelect: response.data[0] });
     } else {
       set({ dataProductos: [] });
       set({ productosItemSelect: null });
     }
     set({ refetchs: p.refetchs });
-    return response || [];
+    return response.data || [];
   },
   selectProductos: (p) => {
 

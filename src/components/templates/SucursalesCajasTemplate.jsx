@@ -4,28 +4,68 @@ import { ListSucursales } from "../organismos/SucursalesDesign/ListSucursales";
 import { RegistrarSucursal } from "../organismos/formularios/RegistrarSucursal";
 import { Toaster } from "sonner";
 import { useSucursalesStore } from "../../store/SucursalesStore";
+import { useEmpresaStore } from "../../store/EmpresaStore";
 import { useCajasStore } from "../../store/CajasStore";
-import {RegistrarCaja} from "../organismos/formularios/RegistrarCaja"
-import {AnimatedGrid} from "../ui/animated/AnimatedGrid"
+import { RegistrarCaja } from "../organismos/formularios/RegistrarCaja"
+import { AnimatedGrid } from "../ui/animated/AnimatedGrid"
+import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
+import { useSuscripcionesStore } from "../../store/SuscripcionStore";
+import { useUsuariosStore } from "../../store/UsuariosStore";
 export const SucursalesCajasTemplate = () => {
-  const {stateSucursal,setStateSucursal} = useSucursalesStore()
-  const {stateCaja} = useCajasStore()
+  const navigate = useNavigate();
+  const { dataSuscripcion } = useSuscripcionesStore();
+  const { stateSucursal, setStateSucursal, dataSucursales } = useSucursalesStore();
+  const { stateCaja } = useCajasStore();
+  const { dataempresa } = useEmpresaStore();
+  const { datausuarios } = useUsuariosStore();
+
+  const planId = dataempresa?.id_plan;
+  const cantidadSucursales = dataSucursales?.length || 0;
+
+  // Lista de IDs por tipo de plan
+  const idsPlanInicial = [3, 6];
+  const idsPlanPro = [7, 8];
+
+  const isSuperUser = datausuarios?.correo === "trees.sanjuan@gmail.com";
+
+  const isPlanInicialLimit = idsPlanInicial.includes(planId) && cantidadSucursales >= 1;
+  const isPlanProLimit = idsPlanPro.includes(planId) && cantidadSucursales >= 3;
+
+  const limitReached = !isSuperUser && (isPlanInicialLimit || isPlanProLimit);
+
+  const handleAgregarSucursal = () => {
+    setStateSucursal(true);
+  };
+
+  const handleMejorarPlan = () => {
+    if (isPlanProLimit) {
+      window.open("https://wa.me/549XXXXXXXXX", "_blank");
+    } else {
+      navigate("/planes");
+    }
+  }
 
   return (
     <Container>
-      <Toaster  position="top-right"/>
+      <Toaster position="top-right" />
       {
-        stateSucursal &&   <RegistrarSucursal/>
+        stateSucursal && <RegistrarSucursal />
       }
-    {
-      stateCaja && <RegistrarCaja/>
-    }
-    
+      {
+        stateCaja && <RegistrarCaja />
+      }
+
       <section className="area1">
         <Header>
           <Title>Cajas por sucursal</Title>
           <Subtitle>gestiona tus sucursales y cajas</Subtitle>
-          <ButtonDashed title="agregar sucursal" funcion={()=>setStateSucursal(true)}/>
+          {
+            limitReached ?
+              <ButtonDashed title={isPlanProLimit ? "Contactar Soporte" : "Mejorar Plan"} funcion={handleMejorarPlan} />
+              :
+              <ButtonDashed title="agregar sucursal" funcion={handleAgregarSucursal} />
+          }
         </Header>
       </section>
       <section className="area2">

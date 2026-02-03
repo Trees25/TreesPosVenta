@@ -21,11 +21,11 @@ export function ToggleTema() {
 
     await editarThemeUser(p);
   };
-  const { mutate,isPending } = useMutation({
+  const { mutate, isPending } = useMutation({
     mutationKey: ["editar tema"],
     mutationFn: editarTemaUser,
     onError: (error) => {
-      console.log(`Error: ${error.message}`);
+      console.error(`Error: ${error.message}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["mostrar usuarios"]);

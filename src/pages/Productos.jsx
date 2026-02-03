@@ -63,12 +63,7 @@ export function Productos() {
     refetchOnWindowFocus: false,
   });
 
-  const isLoading =
-    (isLoadingProductos && !dataProductos.length) ||
-    isLoadingSucursales ||
-    isLoadingCategorias ||
-    isLoadingAlmacenes ||
-    isLoadingProveedores;
+  const isLoading = isLoadingProductos && !dataProductos.length;
   const error = errorProductos;
 
   if (isLoading) {
