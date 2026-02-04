@@ -1,7 +1,10 @@
 import { supabase } from "./supabase.config";
 const tabla = "movimientos_stock";
 export async function MostrarMovStock(p) {
-  const { data, error } = await supabase
+  const pag = p.pagina || 1;
+  const from = (pag - 1) * 20;
+  const to = from + 19;
+  const { data, error, count } = await supabase
     .from(tabla)
     .select(
       `
@@ -12,14 +15,17 @@ export async function MostrarMovStock(p) {
           *
         )
       )
-    `
+    `,
+      { count: "exact" }
     )
     .eq("almacen.sucursales.id_empresa", p.id_empresa)
-    .eq("id_producto", p.id_producto);
+    .eq("id_producto", p.id_producto)
+    .range(from, to)
+    .order("fecha", { ascending: false });
   if (error) {
     throw new Error(error.message);
   }
-  return data;
+  return { data, count };
 }
 
 export async function InsertarMovStock(p) {

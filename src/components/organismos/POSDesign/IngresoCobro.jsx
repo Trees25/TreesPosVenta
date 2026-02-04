@@ -24,6 +24,10 @@ import { useImpresorasStore } from "../../../store/ImpresorasStore";
 import ticket from "../../../reports/TicketVenta";
 import { RegistrarClientesProveedores } from "../formularios/RegistrarClientesProveedores";
 import { useGlobalStore } from "../../../store/GlobalStore";
+import { Switch } from "../../ui/toggles/Switch";
+import { useEditarImpresorasMutation } from "../../../tanstack/ImpresorasStack";
+
+
 export const IngresoCobro = forwardRef((props, ref) => {
   const fechaActual = useFormattedDate();
   const {
@@ -35,6 +39,12 @@ export const IngresoCobro = forwardRef((props, ref) => {
     dataventaconfirmada,
   } = useVentasStore();
   const { total } = useDetalleVentasStore();
+  //Impresora Logic
+  const { statePrintDirecto, setStatePrintDirecto } = useImpresorasStore();
+  const { mutate: mutateImpresora } = useEditarImpresorasMutation();
+
+
+
   //Valores a calcular
   const [stateBuscadorClientes, setStateBuscadorClientes] = useState(false);
   const [precioVenta, setPrecioVenta] = useState(total);
@@ -224,7 +234,7 @@ export const IngresoCobro = forwardRef((props, ref) => {
     if (responseApi.ok) {
       toast.success("El PDF se envió a imprimir correctamente.");
 
-    }else{
+    } else {
       const error = await responseApi.text();
       toast.error("Error al imprimir" + error);
     }
@@ -241,6 +251,7 @@ export const IngresoCobro = forwardRef((props, ref) => {
   }
   //useEffect para recalcular cuando los valores cambian
   useEffect(() => {
+    setPrecioVenta(total);
     if (tipocobro !== "Mixto" && valoresPago[tipocobro] != total) {
       setValoresPago((prev) => ({
         ...prev,
@@ -252,13 +263,23 @@ export const IngresoCobro = forwardRef((props, ref) => {
     calcularVueltoYRestante();
   }, [precioVenta, tipocobro, valoresPago]);
   return (
-    <Container>
+    <Container restante={restante}>
       {mutation.isPending ? (
         <span>guardando...🐖</span>
       ) : (
         <>
           {mutation.isError && <span>error: {mutation.error.message}</span>}
           <section className="area1">
+            <div className="switch-print">
+              <span>Directo</span>
+              <Switch
+                state={statePrintDirecto}
+                setState={() => {
+                  setStatePrintDirecto();
+                  mutateImpresora();
+                }}
+              />
+            </div>
             <span className="tipocobro">{tipocobro}</span>
             <section>
               <span>
@@ -296,15 +317,31 @@ export const IngresoCobro = forwardRef((props, ref) => {
           <Linea />
           <section className="area2">
             {dataMetodosPago?.map((item, index) => {
-              return (tipocobro === "Mixto" && item.nombre !== "Mixto") ||
-                (tipocobro === item.nombre && item.nombre !== "Mixto") ? (
-                <InputText textalign="center" key={index}>
+              const isVisible = (tipocobro === "Mixto" && item.nombre !== "Mixto") ||
+                (tipocobro === item.nombre && item.nombre !== "Mixto");
+
+              if (!isVisible) return null;
+
+              const val = valoresPago[item.nombre] || 0;
+              const isActive = val > 0;
+
+              return (
+                <div className="input-item" key={index}>
+                  <label>
+                    {item.icono && item.icono !== "-" ?
+                      <Icon icon={item.icono} className="icon-pago" /> :
+                      <Icon icon="mdi:payment" className="icon-pago" />
+                    }
+                    {item.nombre}
+                  </label>
                   <input
                     onChange={(e) =>
                       handleChangePago(item.nombre, e.target.value)
                     }
                     defaultValue={tipocobro === item.nombre ? total : ""}
-                    className="form__field"
+                    value={valoresPago[item.nombre] > 0 ? valoresPago[item.nombre] : ""}
+                    placeholder="0.00"
+                    className={`form__field ${isActive ? "active-input" : ""}`}
                     type="number"
                     disabled={
                       tipocobro === "Mixto" || tipocobro === "Efectivo"
@@ -312,17 +349,17 @@ export const IngresoCobro = forwardRef((props, ref) => {
                         : true
                     }
                   />
-                  <label className="form__label">{item.nombre} </label>
-                </InputText>
-              ) : null;
+                </div>
+              );
             })}
           </section>
           <Linea />
           <section className="area3">
             <article className="etiquetas">
               <span className="total">Total: </span>
+              <span>Pagado: </span>
               <span>Vuelto: </span>
-              <span>Restante: </span>
+              <span className="restante-container">Falta: </span>
             </article>
             <article>
               <span className="total">
@@ -334,12 +371,19 @@ export const IngresoCobro = forwardRef((props, ref) => {
               </span>
               <span>
                 {FormatearNumeroDinero(
-                  vuelto,
+                  Object.values(valoresPago).reduce((a, b) => a + b, 0),
                   dataempresa?.currency,
                   dataempresa?.iso
                 )}
               </span>
               <span>
+                {FormatearNumeroDinero(
+                  vuelto,
+                  dataempresa?.currency,
+                  dataempresa?.iso
+                )}
+              </span>
+              <span className="restante-container">
                 {FormatearNumeroDinero(
                   restante,
                   dataempresa?.currency,
@@ -436,13 +480,31 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
+
+    .switch-print {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      span {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #777;
+      }
+    }
     .areacomprobantes {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       padding: 10px;
+      justify-content: center;
+      width: 100%;
       .box {
-        flex: 1 1 40%;
+        flex: 1 1 100px;
         display: flex;
         gap: 10px;
       }
@@ -460,27 +522,89 @@ const Container = styled.div`
     }
     .cliente {
       font-weight: 700;
+      margin-top: 5px;
     }
   }
   .area2 {
-    input {
-      font-size: 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+    width: 100%;
+    margin: 10px 0;
+    
+    .input-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      
+      label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #555;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .icon-pago {
+        font-size: 1.2rem;
+        color: #444;
+      }
+
+      input {
+        font-size: 1.5rem;
+        text-align: center;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        width: 100%;
+        background-color: #f9f9f9;
+        transition: all 0.3s ease;
+        
+        &:focus {
+           border-color: #207c33;
+           background-color: #fff;
+           box-shadow: 0 0 0 3px rgba(32, 124, 51, 0.1);
+        }
+
+        &.active-input {
+          border-color: #207c33;
+          background-color: #e8f5e9;
+          font-weight: bold;
+        }
+      }
     }
   }
   .area3 {
     display: flex;
     justify-content: space-between;
     width: 100%;
+    background-color: #f5f5f5;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 10px;
 
     article {
       display: flex;
       flex-direction: column;
+      gap: 5px;
     }
     .total {
       font-weight: 700;
+      font-size: 1.2rem;
     }
     .etiquetas {
       text-align: end;
+      font-weight: 600;
+      color: #666;
+    }
+    
+    .restante-container {
+       color: ${props => props.restante > 0 ? "#e53935" : "#2e7d32"};
+       font-weight: 800;
+       font-size: 1.3rem;
     }
   }
 `;

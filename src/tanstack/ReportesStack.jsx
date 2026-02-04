@@ -168,6 +168,30 @@ export const useGananciasDetalleVentaQuery = () => {
         _fecha_fin: fechaFin,
       }),
     enabled: !!dataempresa,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+  });
+};
+
+export const useCalcularTotalVentasQuery = () => {
+  const { dataempresa } = useEmpresaStore();
+  const { fechaInicio, fechaFin } = useDashboardStore();
+  const { calcularTotalVentas } = useReportesStore();
+  return useQuery({
+    queryKey: [
+      "calcular total ventas rpc",
+      {
+        _id_empresa: dataempresa?.id,
+        _fecha_inicio: fechaInicio,
+        _fecha_fin: fechaFin,
+      },
+    ],
+    queryFn: () =>
+      calcularTotalVentas({
+        _id_empresa: dataempresa?.id,
+        _fecha_inicio: fechaInicio,
+        _fecha_fin: fechaFin,
+      }),
+    enabled: !!dataempresa,
+    refetchOnWindowFocus: false,
   });
 };

@@ -2,42 +2,53 @@ import styled from "styled-components";
 import { Btn1 } from "../../moleculas/Btn1";
 import { Device } from "../../../styles/breakpoints";
 import { Icon } from "@iconify/react";
-import { useDetalleVentasStore, useEmpresaStore, useVentasStore } from "../../..";
-import {FormatearNumeroDinero} from "../../../utils/Conversiones"
-import {useValidarPermisosOperativos} from "../../../hooks/useValidarPermisosOperativos"
+import { useDetalleVentasStore } from "../../../store/DetalleVentasStore";
+import { useEmpresaStore } from "../../../store/EmpresaStore";
+import { useVentasStore } from "../../../store/VentasStore";
+import { FormatearNumeroDinero } from "../../../utils/Conversiones"
+import { useValidarPermisosOperativos } from "../../../hooks/useValidarPermisosOperativos"
+import { ModalCobro } from "./ModalCobro";
+import { useState } from "react";
+
 export function TotalPos() {
-  const {setStateMetodosPago} = useVentasStore()
-  const {total} = useDetalleVentasStore()
-  const {dataempresa} = useEmpresaStore()
-  const {validarPermiso} = useValidarPermisosOperativos()
-  // const textLength = total.length;
-  // // Definir las clases CSS para diferentes longitudes de texto
-  // let textSizeClass = 'medium-text';
-  // if (textLength < 10) {
-  //   textSizeClass = 'large-text';
-  // } else if (textLength < 20) {
-  //   textSizeClass = 'medium-text';
-  // } else {
-  //   textSizeClass = 'small-text';
-  // }
-  const validarPermisoCobrar = ()=>{
+  const { setStateMetodosPago } = useVentasStore()
+  const { total, totalNeto, descuento, tipoDescuento } = useDetalleVentasStore()
+  const { dataempresa } = useEmpresaStore()
+  const { validarPermiso } = useValidarPermisosOperativos()
+  const [openModalCobro, setOpenModalCobro] = useState(false);
+
+  const validarPermisoCobrar = () => {
     const hasPermission = validarPermiso("Cobrar venta")
-    if(!hasPermission) return;
-    setStateMetodosPago()
+    if (!hasPermission) return;
+    // Mobile: Open Modal
+    setOpenModalCobro(true);
   }
+
   return (
     <Container>
-    <section className="imagen">
-        <img src="https://i.ibb.co/HdYgDdp/corazon-2.png" />
+      {openModalCobro && <ModalCobro onClose={() => setOpenModalCobro(false)} />}
+      <section className="imagen">
+        <Icon icon="noto:money-with-wings" width="60" />
       </section>
       <section className="contentTotal">
         <section className="contentTituloTotal">
-          <Btn1 border="2px"  bgcolor="#ffffff"   color="#207c33" funcion={validarPermisoCobrar} titulo="COBRAR" icono={<Icon icon="fluent-emoji:money-with-wings" />} />
-         
+          <Btn1 border="2px" bgcolor="#ffffff" color="#207c33" funcion={validarPermisoCobrar} titulo="COBRAR" icono={<Icon icon="fluent-emoji:money-with-wings" />} />
+
         </section>
-        <span>{FormatearNumeroDinero(total,dataempresa?.currency,dataempresa?.iso)}</span>
-      
-      </section> 
+
+        {descuento > 0 && (
+          <div className="discount-info">
+            <span className="neto">
+              {FormatearNumeroDinero(totalNeto, dataempresa?.currency, dataempresa?.iso)}
+            </span>
+            <span className="discount-badge">
+              -{tipoDescuento === "porcentaje" ? `${descuento}%` : FormatearNumeroDinero(descuento, dataempresa?.currency, dataempresa?.iso)}
+            </span>
+          </div>
+        )}
+        <span>{FormatearNumeroDinero(total, dataempresa?.currency, dataempresa?.iso)}</span>
+
+      </section>
     </Container>
   );
 }
@@ -47,17 +58,17 @@ const Container = styled.div`
   justify-content: space-between;
   border-radius: 15px;
   font-weight: 700;
-  font-size: 38px;
+  font-size: 26px;
   background-color: #3ff563;
-  padding: 10px;
+  padding: 8px;
   color: #207c33;
   position: relative;
   overflow: hidden;
   &::after {
     content: "";
     display: block;
-    width: 100px;
-    height: 100px;
+    width: 80px;
+    height: 80px;
     background-color: #7fff99;
     position: absolute;
     border-radius: 50%;
@@ -92,6 +103,30 @@ const Container = styled.div`
     margin-top: 10px;
     display: flex;
     flex-direction: column;
+    align-items: flex-end; /* Align right to keep numbers aligned */
+    
+    .discount-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: -5px;
+      
+      .neto {
+        font-size: 20px;
+        text-decoration: line-through;
+        color: rgba(32, 124, 51, 0.7);
+        font-weight: 500;
+      }
+      .discount-badge {
+        font-size: 14px;
+        background-color: #ef4444;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: bold;
+      }
+    }
+
     .contentTituloTotal {
       display: flex;
       align-items: center;

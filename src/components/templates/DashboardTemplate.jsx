@@ -9,8 +9,11 @@ import { CardProductosTopMonto } from "../organismos/DashboardDesign/CardProduct
 import { ChartVentasMetodoPago } from "../organismos/DashboardDesign/ChartVentasMetodoPago";
 import { ChartVentasCategoria } from "../organismos/DashboardDesign/ChartVentasCategoria";
 import { useReportesStore } from "../../store/ReportesStore";
+import { useCalcularTotalVentasQuery } from "../../tanstack/ReportesStack";
+
 export const DashboardTemplate = () => {
   const { totalventas, porcentajeCambio, totalCantidadDetalleVentas, totalGanancias } = useReportesStore()
+  useCalcularTotalVentasQuery();
   return (
     <Container>
       <DashboardHeader />
@@ -65,8 +68,12 @@ const Container = styled.div`
   min-height: 100%;
   max-width: 1400px;
   margin: auto;
-  gap: 20px;
-  padding: 20px;
+  gap: 10px;
+  padding: 10px; /* Reduced from 20px for mobile */
+  @media ${Device.tablet} {
+    gap: 20px;
+    padding: 20px;
+  }
 `;
 const MainContent = styled.div`
   display: grid;
@@ -74,7 +81,8 @@ const MainContent = styled.div`
     "area1"
     "area2"
     "area3"
-    "area4";
+    "area4"
+    "area5"; /* Added area5 explicitly */
   grid-template-columns: 1fr;
   gap: 15px;
   @media ${Device.tablet} {
@@ -145,7 +153,10 @@ const Area5 = styled.section`
   grid-template-columns: 1fr;
   gap: 20px;
   @media ${Device.tablet} {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr; /* Keep stacked on tablet for wider charts */
+  }
+  @media ${Device.laptop} {
+      grid-template-columns: repeat(2, 1fr); /* 2 columns only on laptop+ */
   }
   @media ${Device.desktop} {
     grid-template-columns: repeat(2, 1fr);

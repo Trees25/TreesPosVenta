@@ -13,11 +13,11 @@ import { Btn1 } from "../components/moleculas/Btn1";
 import { useState } from "react";
 import { BuscadorList } from "../components/ui/lists/BuscadorList";
 import { useGlobalStore } from "../store/GlobalStore";
-import { AlertasStock } from "../components/moleculas/AlertasStock";
+import { AlertasStockTablas } from "../components/organismos/tablas/AlertasStockTablas";
 import { v } from "../styles/variables"; // Ensure variables are imported for icons if needed, though Btn1 usually takes text or icons
 
 export const Inventario = () => {
-  const { mostrarMovStock } = useMovStockStore();
+  const { mostrarMovStock, pagina, setPagina, totalRegistros } = useMovStockStore();
   const { dataempresa } = useEmpresaStore();
   const { buscarProductos, buscador } = useProductosStore();
   const { mostrarStockAlertas } = useStockStore();
@@ -28,6 +28,7 @@ export const Inventario = () => {
 
   const [dataSelect, setdataSelect] = useState([]);
   const [isExploding, setIsExploding] = useState(false);
+  const totalPaginas = Math.ceil(totalRegistros / 20) || 1;
 
   const { data: dataStockAlertas } = useQuery({
     queryKey: ["mostrar alertas stock", dataempresa?.id],
@@ -55,6 +56,7 @@ export const Inventario = () => {
       {
         id_empresa: dataempresa?.id,
         id_producto: productosItemSelect?.id,
+        pagina: pagina
       },
     ],
     queryFn: () =>
@@ -73,7 +75,7 @@ export const Inventario = () => {
   return (
     <Container>
       {stateClose && <RegistrarInventario />}
-      <AlertasStock data={dataStockAlertas} />
+      <AlertasStockTablas data={dataStockAlertas} />
 
       <section className="area1">
         {productosItemSelect?.nombre && (
@@ -101,6 +103,27 @@ export const Inventario = () => {
           data={data}
         />
       </section>
+      <section className="footer">
+        <div className="pagination">
+          <Btn1
+            titulo="< Anterior"
+            bgcolor="#f6f6f6"
+            color="#000"
+            disabled={pagina === 1}
+            funcion={() => setPagina(pagina - 1)}
+          />
+          <span>
+            Página {pagina} de {totalPaginas}
+          </span>
+          <Btn1
+            titulo="Siguiente >"
+            bgcolor="#f6f6f6"
+            color="#000"
+            disabled={pagina >= totalPaginas}
+            funcion={() => setPagina(pagina + 1)}
+          />
+        </div>
+      </section>
     </Container>
   );
 };
@@ -113,7 +136,8 @@ const Container = styled.div`
   grid-template:
     "area1" 60px
     "area2" 60px
-    "main" auto;
+    "main" auto
+    "footer" 60px;
   .area1 {
     grid-area: area1;
     /* background-color: rgba(103, 93, 241, 0.14); */
@@ -132,5 +156,20 @@ const Container = styled.div`
   .main {
     grid-area: main;
     /* background-color: rgba(237, 7, 221, 0.14); */
+  }
+  .footer {
+    grid-area: footer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .pagination {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      span {
+        font-weight: bold;
+        color: ${({ theme }) => theme.text};
+      }
+    }
   }
 `;

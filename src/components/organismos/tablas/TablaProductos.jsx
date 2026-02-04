@@ -141,6 +141,40 @@ export function TablaProductos({
         return filterStatuses.includes(status?.id);
       },
     },
+    {
+      accessorKey: "categorias",
+      header: "Categoría",
+      cell: (info) => (
+        <div data-title="Categoría" className="ContentCell">
+          <span style={{ fontSize: "12px", background: "#f0f0f0", padding: "5px", borderRadius: "5px" }}>
+            {info.row.original.categorias?.nombre || "Sin Categoría"}
+          </span>
+        </div>
+      ),
+      enableColumnFilter: true,
+      filterFn: (row, columnId, filterStatuses) => {
+        if (filterStatuses.length === 0) return true;
+        const status = row.getValue(columnId);
+        return filterStatuses.includes(status?.id);
+      },
+    },
+    {
+      accessorKey: "clientes_proveedores",
+      header: "Proveedor",
+      cell: (info) => (
+        <div data-title="Proveedor" className="ContentCell">
+          <span style={{ fontSize: "12px" }}>
+            {info.row.original.clientes_proveedores?.nombres || "Sin Proveedor"}
+          </span>
+        </div>
+      ),
+      enableColumnFilter: true,
+      filterFn: (row, columnId, filterStatuses) => {
+        if (filterStatuses.length === 0) return true;
+        const status = row.getValue(columnId);
+        return filterStatuses.includes(status?.id);
+      },
+    },
 
     {
       accessorKey: "acciones",
@@ -261,10 +295,10 @@ const Container = styled.div`
     margin-bottom: 1.5em;
     border-spacing: 0;
     @media (min-width: ${v.bpbart}) {
-      font-size: 0.9em;
+      font-size: 0.75em;
     }
     @media (min-width: ${v.bpmarge}) {
-      font-size: 1em;
+      font-size: 0.85em;
     }
     thead {
       position: absolute;

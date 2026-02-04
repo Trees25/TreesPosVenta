@@ -13,15 +13,19 @@ export const useReportesStore = create((set, get) => ({
     set({
       idventa: 0,
     }),
+  calcularTotalVentas: async (p) => {
+    const { data, error } = await supabase.rpc("rpc_sumar_ventas", {
+      p_id_empresa: p._id_empresa,
+      fecha_ini: p._fecha_inicio,
+      fecha_fin: p._fecha_fin
+    });
+    if (error) console.error("Error calculating total ventas:", error);
+    set({ totalventas: data || 0 });
+    get().setCalcularPorcentajeCambio();
+    return data;
+  },
   mostrarVentasDashboard: async (p) => {
     const { data } = await supabase.rpc("dashboartotalventasconfechas", p);
-    // Calcular el total general en el frontend
-    const totalGeneral = data.reduce(
-      (sum, venta) => sum + Number(venta.total_ventas),
-      0
-    );
-    set({ totalventas: totalGeneral });
-    get().setCalcularPorcentajeCambio();
     return data;
   },
   mostrarCantidadDetalleVentasDashboard: async (p) => {

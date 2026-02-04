@@ -6,16 +6,12 @@ import { IngresoCobro } from "./IngresoCobro";
 import { VisorTicketVenta } from "./VisorTicketVenta";
 import { useVentasStore } from "../../../store/VentasStore";
 import { useDetalleVentasStore } from "../../../store/DetalleVentasStore";
-import { Switch } from "../../ui/toggles/Switch";
-import { useImpresorasStore } from "../../../store/ImpresorasStore";
-import { useEditarImpresorasMutation } from "../../../tanstack/ImpresorasStack";
 export function PantallaCobro() {
   const [stateVerticket, setStateVerticker] = useState(false);
   const { setStatePantallaCobro, tipocobro } = useVentasStore();
   const ingresoCobroRef = useRef();
   const { datadetalleventa } = useDetalleVentasStore();
-  const { statePrintDirecto, setStatePrintDirecto } = useImpresorasStore();
-  const { mutate, isPending } = useEditarImpresorasMutation();
+
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === "Enter") {
@@ -35,30 +31,6 @@ export function PantallaCobro() {
   return (
     <Container>
       <section className="contentingresocobro">
-        {stateVerticket && (
-          <VisorTicketVenta
-            setState={() => setStateVerticker(!stateVerticket)}
-          />
-        )}
-
-        <article className="contentverticket">
-          <ContentSwich>
-            imprimir directo
-            <Switch
-              state={statePrintDirecto}
-              setState={() => {
-                setStatePrintDirecto();
-                mutate();
-              }}
-            />
-          </ContentSwich>
-        </article>
-        {isPending ? (
-          <spa>guardando cambios de impresora...</spa>
-        ) : (
-          <IngresoCobro ref={ingresoCobroRef} />
-        )}
-
         <article
           className="contentverticket"
           onClick={() =>
@@ -71,6 +43,13 @@ export function PantallaCobro() {
           <Icon className="icono" icon="ep:arrow-left-bold" />
           <span>volver</span>
         </article>
+
+        {stateVerticket && (
+          <VisorTicketVenta
+            setState={() => setStateVerticker(!stateVerticket)}
+          />
+        )}
+        <IngresoCobro ref={ingresoCobroRef} />
       </section>
     </Container>
   );
@@ -90,26 +69,32 @@ const Container = styled.div`
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 20px;
-    height: calc(100% - 10rem);
+    gap: 10px;
+    height: 100%; 
+    width: 100%;
+    
     .contentverticket {
-      align-self: flex-end;
+      align-self: flex-start; /* Move to left */
+      margin-left: 20px;
+      margin-top: 20px;
       cursor: pointer;
       display: flex;
       gap: 10px;
       align-items: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 200;
+      
       span {
-        font-weight: 700px;
+        font-weight: 700;
         font-size: 18px;
+        color: ${({ theme }) => theme.text};
       }
       .icono {
         font-size: 30px;
+        color: ${({ theme }) => theme.text};
       }
     }
   }
-`;
-const ContentSwich = styled.section`
-  display: flex;
-  gap: 15px;
-  margin-bottom: 10px;
 `;

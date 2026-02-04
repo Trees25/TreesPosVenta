@@ -5,32 +5,34 @@ import { Device } from "../../../styles/breakpoints";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { useVentasStore } from "../../../store/VentasStore";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useEmpresaStore } from "../../../store/EmpresaStore";
+
 export function MenuFlotante() {
   const [isOpen, setIsOpen] = useState(false);
-  const { eliminarVenta,idventa } = useVentasStore();
+  const { eliminarVenta, idventa } = useVentasStore();
+  const { dataempresa } = useEmpresaStore();
   const { setStateIngresoSalida, setTipoRegistro, setStateCierraCaja } =
-  useCierreCajaStore();
-  const queryClient = useQueryClient()
-  const {mutate:mutateEliminarVenta,isPending} = useMutation({
-    mutationKey:["eliminar venta"],
-    mutationFn: ()=>{
-      if(idventa>0){
-       return eliminarVenta({id:idventa})
-      }else{
-        return Promise.reject(new Error("Sin registro de venta para eliminar"))
+    useCierreCajaStore();
+  const queryClient = useQueryClient();
+  const { mutate: mutateEliminarVenta, isPending } = useMutation({
+    mutationKey: ["eliminar venta"],
+    mutationFn: () => {
+      if (idventa > 0) {
+        return eliminarVenta({ id: idventa, id_empresa: dataempresa?.id });
+      } else {
+        return Promise.reject(new Error("Sin registro de venta para eliminar"));
       }
     },
-    onError:(error)=>{
+    onError: (error) => {
       toast.error(`Error: ${error.message}`)
     },
-    onSuccess:()=>{
+    onSuccess: () => {
       toast.success("Venta eliminada")
       toggleMenu()
       queryClient.invalidateQueries(["mostrar detalle venta"])
     }
   })
- 
+
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -107,7 +109,7 @@ const slideUp = keyframes`
 
 const Container = styled.div`
   position: fixed;
-  bottom: 100px;
+  bottom: 180px;
   width: 100%;
   display: flex;
   flex-direction: column;

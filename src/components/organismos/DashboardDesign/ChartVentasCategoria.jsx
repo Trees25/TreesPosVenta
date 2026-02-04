@@ -1,13 +1,13 @@
 import styled from "styled-components";
 import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
 } from "recharts";
 import { useEmpresaStore } from "../../../store/EmpresaStore";
 import { FormatearNumeroDinero } from "../../../utils/Conversiones";
@@ -16,78 +16,78 @@ import { useMostrarVentasXCategoriaQuery } from "../../../tanstack/ReportesStack
 import { Device } from "../../../styles/breakpoints";
 
 export const ChartVentasCategoria = () => {
-    const { data, isLoading } = useMostrarVentasXCategoriaQuery();
-    const { dataempresa } = useEmpresaStore();
-    const { themeStyle } = useThemeStore();
+  const { data, isLoading } = useMostrarVentasXCategoriaQuery();
+  const { dataempresa } = useEmpresaStore();
+  const { themeStyle } = useThemeStore();
 
-    const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#0088fe"];
+  const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#0088fe"];
 
-    if (isLoading) return <LoadingContainer>Cargando categorías...</LoadingContainer>;
-    if (!data || data.length === 0) return <EmptyContainer>No hay datos de ventas por categoría para este periodo</EmptyContainer>;
+  if (isLoading) return <LoadingContainer>Cargando categorías...</LoadingContainer>;
+  if (!data || data.length === 0) return <EmptyContainer>No hay datos de ventas por categoría para este periodo</EmptyContainer>;
 
-    return (
-        <Container>
-            <Header>
-                <Title>Ventas por Categoría</Title>
-            </Header>
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                    data={data}
-                    layout="vertical"
-                    margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-                >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                    <XAxis type="number" hide />
-                    <YAxis
-                        dataKey="categoria"
-                        type="category"
-                        width={80}
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{
-                            fill: themeStyle.text,
-                            fontSize: 10,
-                        }}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="total" radius={[0, 10, 10, 0]}>
-                        {data?.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                    </Bar>
-                </BarChart>
-            </ResponsiveContainer>
-        </Container>
-    );
+  return (
+    <Container>
+      <Header>
+        <Title>Ventas por Categoría</Title>
+      </Header>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+          <XAxis type="number" hide />
+          <YAxis
+            dataKey="categoria"
+            type="category"
+            width={80}
+            axisLine={false}
+            tickLine={false}
+            tick={{
+              fill: themeStyle.text,
+              fontSize: 10,
+            }}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Bar dataKey="total" radius={[0, 10, 10, 0]}>
+            {data?.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </Container>
+  );
 };
 
 const CustomTooltip = ({ active, payload, label }) => {
-    const { dataempresa } = useEmpresaStore();
-    if (active && payload && payload.length) {
-        return (
-            <TooltipContainer>
-                <Label>{label}</Label>
-                <Value>
-                    {FormatearNumeroDinero(
-                        payload[0].value,
-                        dataempresa?.currency,
-                        dataempresa?.iso
-                    )}
-                </Value>
-            </TooltipContainer>
-        );
-    }
-    return null;
+  const { dataempresa } = useEmpresaStore();
+  if (active && payload && payload.length) {
+    return (
+      <TooltipContainer>
+        <Label>{label}</Label>
+        <Value>
+          {FormatearNumeroDinero(
+            payload[0].value,
+            dataempresa?.currency,
+            dataempresa?.iso
+          )}
+        </Value>
+      </TooltipContainer>
+    );
+  }
+  return null;
 };
 
 const Container = styled.div`
-  padding: 15px;
+  padding: 5px; /* Reduced padding from 15px */
   min-height: 400px;
   height: 400px;
   display: flex;
   flex-direction: column;
   @media ${Device.tablet} {
-    padding: 20px;
+    padding: 10px; /* Reduced padding from 20px */
     height: 450px;
   }
 `;

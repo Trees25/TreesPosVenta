@@ -7,24 +7,27 @@ import { useCierreCajaStore } from "../../../store/CierreCajaStore";
 import { useVentasStore } from "../../../store/VentasStore";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useEmpresaStore } from "../../../store/EmpresaStore";
+
 export function FooterPos() {
-  const { eliminarVenta,idventa } = useVentasStore();
+  const { eliminarVenta, idventa } = useVentasStore();
+  const { dataempresa } = useEmpresaStore();
   const { setStateIngresoSalida, setTipoRegistro, setStateCierraCaja } =
-  useCierreCajaStore();
-  const queryClient = useQueryClient()
-  const {mutate:mutateEliminarVenta,isPending} = useMutation({
-    mutationKey:["eliminar venta"],
-    mutationFn: ()=>{
-      if(idventa>0){
-       return eliminarVenta({id:idventa})
-      }else{
-        return Promise.reject(new Error("Sin registro de venta para eliminar"))
+    useCierreCajaStore();
+  const queryClient = useQueryClient();
+  const { mutate: mutateEliminarVenta, isPending } = useMutation({
+    mutationKey: ["eliminar venta"],
+    mutationFn: () => {
+      if (idventa > 0) {
+        return eliminarVenta({ id: idventa, id_empresa: dataempresa?.id });
+      } else {
+        return Promise.reject(new Error("Sin registro de venta para eliminar"));
       }
     },
-    onError:(error)=>{
+    onError: (error) => {
       toast.error(`Error: ${error.message}`)
     },
-    onSuccess:()=>{
+    onSuccess: () => {
       toast.success("Venta eliminada")
       queryClient.invalidateQueries(["mostrar detalle venta"])
     }
@@ -42,27 +45,27 @@ export function FooterPos() {
         <Btn1
           bgcolor="#fff"
           color="#2d2d2d"
-          funcion={()=>setStateCierraCaja(true)}
+          funcion={() => setStateCierraCaja(true)}
           icono={<Icon icon="emojione:card-file-box" />}
           titulo="Cerrar caja"
         />
         <Btn1
           bgcolor="#fff"
           color="#2d2d2d"
-          funcion={()=>{
+          funcion={() => {
             setStateIngresoSalida(true)
-        setTipoRegistro("ingreso")
-          } }
+            setTipoRegistro("ingreso")
+          }}
           icono={<Icon icon="fluent-emoji:dollar-banknote" />}
           titulo="Ingresar dinero"
         />
         <Btn1
-           bgcolor="#fff"
+          bgcolor="#fff"
           color="#2d2d2d"
-          funcion={()=>{
+          funcion={() => {
             setStateIngresoSalida(true)
-        setTipoRegistro("salida")
-          } }
+            setTipoRegistro("salida")
+          }}
           icono={<Icon icon="noto-v1:money-bag" />}
           titulo="Retirar dinero"
         />

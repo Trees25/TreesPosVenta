@@ -80,13 +80,13 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 const Container = styled.div`
-  padding: 15px;
+  padding: 5px; /* Reduced from 15px */
   min-height: 400px;
   height: 400px;
   display: flex;
   flex-direction: column;
   @media ${Device.tablet} {
-    padding: 20px;
+    padding: 10px; /* Reduced from 20px */
     height: 450px;
   }
 `;

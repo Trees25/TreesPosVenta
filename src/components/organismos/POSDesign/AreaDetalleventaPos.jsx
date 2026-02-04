@@ -6,7 +6,7 @@ import {
   Btn1,
   InputText2,
   Lottieanimacion,
- 
+
   useDetalleVentasStore,
   useEmpresaStore,
   useVentasStore,
@@ -22,9 +22,9 @@ export function AreaDetalleventaPos() {
   const { dataempresa } = useEmpresaStore();
   const [editIndex, setEditIndex] = useState(null);
   const [newCantidad, setNewCantidad] = useState(1);
-  const { mostrardetalleventa, editarCantidadDetalleVenta,eliminardetalleventa } =
+  const { mostrardetalleventa, editarCantidadDetalleVenta, eliminardetalleventa } =
     useDetalleVentasStore();
-    const queryClient = useQueryClient()
+  const queryClient = useQueryClient()
   const { idventa } = useVentasStore();
   const EditarCantidadDv = async (data) => {
     const p = {
@@ -33,26 +33,26 @@ export function AreaDetalleventaPos() {
     };
     await editarCantidadDetalleVenta(p);
   };
-  const {mutate:mutateEditarCantidadDV} = useMutation({
+  const { mutate: mutateEditarCantidadDV } = useMutation({
     mutationKey: ["editar cantidad detalle venta"],
     mutationFn: EditarCantidadDv,
-    onError:(error)=>{
+    onError: (error) => {
       toast.error(`Error: ${error.message}`)
     },
-    onSuccess:()=>{
+    onSuccess: () => {
       queryClient.invalidateQueries(["mostrar detalle venta"])
     }
   });
-  const EliminarDV =async(p) =>{
-    await eliminardetalleventa({id:p.id})
+  const EliminarDV = async (p) => {
+    await eliminardetalleventa({ id: p.id })
   }
-  const {mutate:mutateEliminarDV} = useMutation({
+  const { mutate: mutateEliminarDV } = useMutation({
     mutationKey: ["editar cantidad detalle venta"],
     mutationFn: EliminarDV,
-    onError:(error)=>{
+    onError: (error) => {
       toast.error(`Error: ${error.message}`)
     },
-    onSuccess:()=>{
+    onSuccess: () => {
       queryClient.invalidateQueries(["mostrar detalle venta"])
     }
   });
@@ -65,7 +65,7 @@ export function AreaDetalleventaPos() {
     setNewCantidad(value);
   };
   const handleInputBlur = (item) => {
-    mutateEditarCantidadDV({id:item.id,cantidad:newCantidad})
+    mutateEditarCantidadDV({ id: item.id, cantidad: newCantidad })
     setEditIndex(null); // Salir del modo edición
   };
   const handleKeyDown = (e, item) => {
@@ -79,23 +79,13 @@ export function AreaDetalleventaPos() {
   });
   return (
     <AreaDetalleventa className={items?.length > 0 ? "" : "animacion"}>
-    {items?.length > 0 ? (
-      items?.map((item, index) => {
-        return (
-          <Itemventa key={index}>
-            <article className="contentdescripcion">
-              <span className="descripcion">{item.descripcion}</span>
-              <span className="importe">
-                <strong>precio unit:</strong>
-                🪵
-                {FormatearNumeroDinero(
-                  item.precio_venta,
-                  dataempresa?.currency,
-                  dataempresa?.iso
-                )}
-              </span>
-              <ContentTotalResponsive>
-                <span className="importerespo">
+      {items?.length > 0 ? (
+        items?.map((item, index) => {
+          return (
+            <Itemventa key={index}>
+              <article className="contentdescripcion">
+                <span className="descripcion">{item.descripcion}</span>
+                <span className="importe">
                   <strong>precio unit:</strong>
                   🪵
                   {FormatearNumeroDinero(
@@ -104,93 +94,103 @@ export function AreaDetalleventaPos() {
                     dataempresa?.iso
                   )}
                 </span>
-                <article className="contentTotaldetalleventarespon">
-                  <span className="cantidad">
-                    <strong>
-                      {FormatearNumeroDinero(
-                        item.total,
-                        dataempresa?.currency,
-                        dataempresa?.iso
-                      )}
-                    </strong>
+                <ContentTotalResponsive>
+                  <span className="importerespo">
+                    <strong>precio unit:</strong>
+                    🪵
+                    {FormatearNumeroDinero(
+                      item.precio_venta,
+                      dataempresa?.currency,
+                      dataempresa?.iso
+                    )}
                   </span>
-                  <span
-                    className="delete"
-                    onClick={() => mutateEliminarDV(item)}
-                  >
-                    <Icon icon="weui:delete-filled" width="24" height="24" />
-                  </span>
-                </article>
-              </ContentTotalResponsive>
-            </article>
-            <article className="contentbtn">
-              <Btn1
-                funcion={() =>
-                  mutateEditarCantidadDV({
-                    id: item.id,
-                    cantidad: item.cantidad + 1,
-                  })
-                }
-                width="20px"
-                height="35px"
-                icono={<Icon icon="mdi:add-bold" />}
-              ></Btn1>
-              {editIndex === index ? (
-                <InputText2>
-                  <input
-                    type="number"
-                    value={newCantidad}
-                    onChange={handleInputChange}
-                    onBlur={() => handleInputBlur(item)}
-                    onKeyDown={(e) => handleKeyDown(e, item)}
-                    className="form__field"
-                    min="1"
-                  />
-                </InputText2>
-              ) : (
-                <>
-                  <span className="cantidad">{item.cantidad}</span>
-                  <Icon
-                    icon="mdi:pencil"
-                    onClick={() => handleEditClick(index, item.cantidad)}
-                    className="edit-icon"
-                  />
-                </>
-              )}
+                  <article className="contentTotaldetalleventarespon">
+                    <span className="cantidad">
+                      <strong>
+                        {FormatearNumeroDinero(
+                          item.total,
+                          dataempresa?.currency,
+                          dataempresa?.iso
+                        )}
+                      </strong>
+                    </span>
+                    <span
+                      className="delete"
+                      onClick={() => mutateEliminarDV(item)}
+                    >
+                      <Icon icon="weui:delete-filled" width="24" height="24" />
+                    </span>
+                  </article>
+                </ContentTotalResponsive>
+              </article>
+              <article className="contentbtn">
+                <Btn1
+                  funcion={() =>
+                    mutateEditarCantidadDV({
+                      id: item.id,
+                      cantidad: item.cantidad + 1,
+                    })
+                  }
+                  width="20px"
+                  height="35px"
+                  icono={<Icon icon="mdi:add-bold" />}
+                ></Btn1>
+                {editIndex === index ? (
+                  <InputText2>
+                    <input
+                      type="number"
+                      value={newCantidad}
+                      onChange={handleInputChange}
+                      onBlur={() => handleInputBlur(item)}
+                      onKeyDown={(e) => handleKeyDown(e, item)}
+                      className="form__field"
+                      min="1"
+                    />
+                  </InputText2>
+                ) : (
+                  <>
+                    <span className="cantidad">{item.cantidad}</span>
+                    <Icon
+                      icon="mdi:pencil"
+                      onClick={() => handleEditClick(index, item.cantidad)}
+                      className="edit-icon"
+                    />
+                  </>
+                )}
 
-              <Btn1
-                funcion={() =>
-                  mutateEditarCantidadDV({
-                    id: item.id,
-                    cantidad: item.cantidad - 1,
-                  })
-                }
-                width="20px"
-                height="35px"
-                icono={<Icon icon="subway:subtraction-1" />}
-              ></Btn1>
-            </article>
-            <article className="contentTotaldetalleventa">
-              <span className="cantidad">
-                <strong>
-                  {FormatearNumeroDinero(
-                    item.total,
-                    dataempresa?.currency,
-                    dataempresa?.iso
-                  )}
-                </strong>
-              </span>
-              <span className="delete" onClick={() => mutateEliminarDV(item)}>
-                <Icon icon="weui:delete-filled" width="24" height="24" />
-              </span>
-            </article>
-          </Itemventa>
-        );
-      })
-    ) : (
-      <Lottieanimacion animacion={animacionvacio} alto="200" ancho="200" />
-    )}
-  </AreaDetalleventa>
+                <Btn1
+                  funcion={() =>
+                    mutateEditarCantidadDV({
+                      id: item.id,
+                      cantidad: item.cantidad - 1,
+                    })
+                  }
+                  width="20px"
+                  height="35px"
+                  icono={<Icon icon="subway:subtraction-1" />}
+                ></Btn1>
+              </article>
+              <article className="contentTotaldetalleventa">
+                <span className="cantidad">
+                  <strong>
+                    {FormatearNumeroDinero(
+                      item.total,
+                      dataempresa?.currency,
+                      dataempresa?.iso
+                    )}
+                  </strong>
+                </span>
+                <span className="delete" onClick={() => mutateEliminarDV(item)}>
+                  <Icon icon="weui:delete-filled" width="24" height="24" />
+                </span>
+              </article>
+            </Itemventa>
+          );
+        })
+      ) : (
+        <Lottieanimacion animacion={animacionvacio} alto="200" ancho="200" />
+      )}
+    </AreaDetalleventa>
   );
 }
 const ContentTotalResponsive = styled.div`
@@ -232,9 +232,16 @@ const AreaDetalleventa = styled.section`
   margin-top: 10px;
   flex-direction: column;
   gap: 10px;
-  max-height:calc(100vh - 500px);
-  overflow-y: auto; /* Activa el scroll solo en Y */
-  overflow-x: hidden; /* Oculta el scroll en X */
+  
+  /* Mobile: Auto height to allow page scrolling */
+  max-height: initial;
+  overflow-y: visible;
+  overflow-x: hidden; 
+      
+  @media ${Device.desktop} {
+     max-height: calc(100vh - 100px); /* Fixed height for desktop column */
+     overflow-y: auto;
+  }
       
   &::-webkit-scrollbar {
   width: 12px;
@@ -251,9 +258,6 @@ const AreaDetalleventa = styled.section`
     height: 100%;
     justify-content: center;
   }
-  @media ${Device.laptop} {
-    max-height:initial;
-  }
 `;
 const Itemventa = styled.section`
   display: flex;
@@ -262,18 +266,18 @@ const Itemventa = styled.section`
   border-bottom: 1px dashed ${({ theme }) => theme.color2};
   animation: ${blur_in} 0.2s linear both;
   flex-direction: column;
-  gap: 10px;
+  gap: 5px;
   .contentdescripcion {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 5px;
     width: 100%;
     .descripcion {
       font-weight: 700;
-      font-size: 20px;
+      font-size: 14px;
     }
     .importe {
-      font-size: 15px;
+      font-size: 13px;
       display: none;
       @media ${Device.laptop} {
         display: block;
@@ -284,16 +288,16 @@ const Itemventa = styled.section`
     display: flex;
     width: 100%;
     height: 100%;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
     justify-content: center;
     .cantidad {
-      font-size: 1.8rem;
+      font-size: 1.1rem;
       font-weight: 700;
     }
     .edit-icon {
       cursor: pointer;
-      font-size: 18px;
+      font-size: 16px;
     }
   }
   .contentTotaldetalleventa {
@@ -304,11 +308,11 @@ const Itemventa = styled.section`
       justify-content: center;
       text-align: end;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
       width: 100%;
       .delete {
         cursor: pointer;
-        width: 20px;
+        width: 18px;
         align-self: center;
       }
     }
@@ -320,30 +324,30 @@ const Itemventa = styled.section`
     .contentdescripcion {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 5px;
       width: 100%;
       .descripcion {
         font-weight: 700;
-        font-size: 20px;
+        font-size: 16px; 
       }
       .importe {
-        font-size: 15px;
+        font-size: 13px;
       }
     }
     .contentbtn {
       display: flex;
       width: 100%;
       height: 100%;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
       justify-content: center;
       .cantidad {
-        font-size: 1.8rem;
+        font-size: 1.2rem;
         font-weight: 700;
       }
       .edit-icon {
         cursor: pointer;
-        font-size: 18px;
+        font-size: 16px;
       }
     }
   }

@@ -26,10 +26,14 @@ export async function EliminarVentasIncompletas(p) {
   }
 }
 export async function EliminarVenta(p) {
+  if (!p.id_empresa) {
+    throw new Error("Falta el id_empresa para eliminar la venta");
+  }
   const { error } = await supabase
     .from(tabla)
     .delete()
-    .eq("id", p.id);
+    .eq("id", p.id)
+    .eq("id_empresa", p.id_empresa);
   if (error) {
     throw new Error(error.message);
   }

@@ -9,12 +9,16 @@ import { useMetodosPagoStore } from "../../../store/MetodosPagoStore";
 import { useQuery } from "@tanstack/react-query";
 import { useValidarPermisosOperativos } from "../../../hooks/useValidarPermisosOperativos";
 import { useDetalleVentasStore } from "../../../store/DetalleVentasStore";
+import { ModalDescuento } from "./ModalDescuento";
+import { useState } from "react";
+import { Icon } from "@iconify/react";
 export function AreaTecladoPos() {
   const { setStatePantallaCobro, stateMetodosPago } = useVentasStore();
   const { dataempresa } = useEmpresaStore();
   const { dataMetodosPago: datametodospago } = useMetodosPagoStore();
-  const {datadetalleventa} = useDetalleVentasStore()
+  const { datadetalleventa } = useDetalleVentasStore()
   const { validarPermiso } = useValidarPermisosOperativos();
+  const [openDescuento, setOpenDescuento] = useState(false);
   // const { data: datametodospago } = useQuery({
   //   queryKey: ["mostrar metodos de pago"],
   //   queryFn: () => mostrarMetodosPago({ id_empresa: dataempresa?.id }),
@@ -23,22 +27,25 @@ export function AreaTecladoPos() {
   const ValidarPermisocobrar = (p) => {
     const response = validarPermiso("Cobrar venta");
     if (!response) return;
-    console.log("tipocobro",p.nombre)
-    setStatePantallaCobro({data:datadetalleventa, tipocobro: p.nombre });
+    console.log("tipocobro", p.nombre)
+    setStatePantallaCobro({ data: datadetalleventa, tipocobro: p.nombre });
   };
 
   return (
     <Container stateMetodosPago={stateMetodosPago}>
+      {/* Modal de Descuento */}
+      {openDescuento && <ModalDescuento onClose={() => setOpenDescuento(false)} />}
+
       <section className="areatipopago">
         {datametodospago?.map((item, index) => {
           return (
             <article className="box" key={index}>
               <Btn1
                 imagen={item.icono != "-" ? item.icono : null}
-                funcion={() => ValidarPermisocobrar( item )}
+                funcion={() => ValidarPermisocobrar(item)}
                 titulo={item.nombre}
                 border="0"
-                height="70px"
+                height="55px"
                 width="100%"
               />
             </article>
@@ -46,15 +53,16 @@ export function AreaTecladoPos() {
         })}
       </section>
       <section className="totales">
-        {/* <div className="subtotal">
-          <span>
-            Sub total: <strong>$ 9.99</strong>{" "}
-          </span>
-          <span>IGV (18%): $ 0.00</span>
-          <span>
-            Sub total: <strong>$ 9.99</strong>{" "}
-          </span>
-        </div> */}
+        <div className="acciones-extra">
+          <Btn1
+            titulo="Descuento"
+            icono={<Icon icon="ri:discount-percent-fill" width="20" />}
+            bgcolor="#FFB74D"
+            color="#000"
+            width="100%"
+            funcion={() => setOpenDescuento(true)}
+          />
+        </div>
         <TotalPos />
       </section>
     </Container>
@@ -65,22 +73,24 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  position: absolute;
-  bottom: 10px;
-  width: calc(100% - 5px);
+  
+  /* Mobile: Static/Relative flow */
+  position: relative; 
+  width: 100%;
   border-radius: 15px;
+  
   @media ${Device.desktop} {
     position: relative;
-    width: 450px;
+    width: 400px;
     bottom: initial;
   }
   .areatipopago {
-    display: ${({ stateMetodosPago }) => (stateMetodosPago ? "flex" : "none")};
+    display: none; /* Hidden on mobile */
     flex-wrap: wrap;
     gap: 10px;
     padding: 10px;
     @media ${Device.desktop} {
-      display: flex;
+      display: flex; /* Visible on desktop */
       flex-wrap: wrap;
       gap: 10px;
       padding: 10px;
@@ -105,6 +115,13 @@ const Container = styled.div`
       font-weight: 500;
       @media ${Device.desktop} {
         display: flex;
+      }
+    }
+    .acciones-extra {
+      margin-bottom: 10px;
+      display: none; /* Hidden on mobile */
+      @media ${Device.desktop} {
+         display: block;
       }
     }
   }

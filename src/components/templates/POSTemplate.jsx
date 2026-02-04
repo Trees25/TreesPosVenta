@@ -35,42 +35,45 @@ export function POSTemplate() {
     useMostrarAlmacenesXSucursalQuery();
   const { isLoading: isLoadingStockPorProductoYAlmacen } =
     useMostrarStockXAlmacenesYProductoQuery();
-   
-    const {isLoading: isLoadingSerializacionesVentas} = useMostrarSerializacionesVentasQuery()
-    const {isLoading:isLoadingImpresoras} = useMostrasrImpresorasPorCajaQuery()
+
+  const { isLoading: isLoadingSerializacionesVentas } = useMostrarSerializacionesVentasQuery()
+  const { isLoading: isLoadingImpresoras } = useMostrasrImpresorasPorCajaQuery()
   return (
-    <Container>
+    <>
+      <Container>
+        {statePantallaCobro && <PantallaCobro />}
+
+        <HeaderPos />
+        <Main>
+          <Toaster position="top-center" />
+          <AreaDetalleventaPos />
+          <AreaTecladoPos />
+        </Main>
+        <FooterPos />
+      </Container>
       {stateModal && <SelectAlmacenModal />}
-
-      {statePantallaCobro && <PantallaCobro />}
-
-      <HeaderPos />
-      <Main>
-        <Toaster position="top-center" />
-        <AreaDetalleventaPos />
-        <AreaTecladoPos />
-      </Main>
-      <FooterPos />
       <MenuFlotante />
       {stateIngresoSalida && <PantallaIngresoSalidaDinero />}
       {stateCierreCaja && <PantallaCierreCaja />}
-    </Container>
+    </>
   );
+
 }
 const Container = styled.div`
-  height: calc(100vh - 60px);
+  min-height: 100vh;
+  height: auto;
   padding: 10px;
   padding-top: 50px;
   display: grid;
   gap: 10px;
   grid-template:
-    "header" 220px
+    "header" 80px
     "main" auto;
 
   animation: ${blur_in} 0.5s linear both;
   @media ${Device.desktop} {
     grid-template:
-      "header header" 140px
+      "header header" 130px
       "main main"
       "footer footer" 60px;
   }
@@ -83,7 +86,7 @@ const Main = styled.div`
   flex-direction: column;
   width: 100%;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   gap: 10px;
 
   @media ${Device.desktop} {

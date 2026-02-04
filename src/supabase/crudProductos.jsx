@@ -21,7 +21,7 @@ export async function MostrarProductos(p) {
   const pag = p.pagina || 1;
   const from = (pag - 1) * 6;
   const to = from + 5;
-  let query = supabase.from(tabla).select("*", { count: "exact" }).eq("id_empresa", p.id_empresa).range(from, to);
+  let query = supabase.from(tabla).select("*, categorias(nombre), clientes_proveedores(nombres)", { count: "exact" }).eq("id_empresa", p.id_empresa).range(from, to);
 
   if (p.id_categoria) {
     query = query.eq("id_categoria", p.id_categoria);
@@ -38,7 +38,7 @@ export async function MostrarProductos(p) {
 }
 
 export async function BuscarProductos(p) {
-  let query = supabase.from(tabla).select("*").eq("id_empresa", p.id_empresa)
+  let query = supabase.from(tabla).select("*, categorias(nombre), clientes_proveedores(nombres)").eq("id_empresa", p.id_empresa)
     .ilike("nombre", `%${p.buscador}%`);
 
   if (p.id_categoria) {

@@ -1,8 +1,11 @@
 import { create } from "zustand";
 import { InsertarMovStock, MostrarMovStock } from "../supabase/crudMovStock";
 
-export const useMovStockStore = create((set) => ({
+export const useMovStockStore = create((set, get) => ({
   tipo: "ingreso",
+  pagina: 1,
+  totalRegistros: 0,
+  setPagina: (p) => set({ pagina: p }),
   setTipo: (p) => {
     set({ tipo: p });
   },
@@ -10,7 +13,9 @@ export const useMovStockStore = create((set) => ({
     await InsertarMovStock(p);
   },
   mostrarMovStock: async (p) => {
-   const result= await MostrarMovStock(p);
-   return result
+    const { pagina } = get();
+    const result = await MostrarMovStock({ ...p, pagina });
+    set({ totalRegistros: result.count });
+    return result.data;
   },
 }));

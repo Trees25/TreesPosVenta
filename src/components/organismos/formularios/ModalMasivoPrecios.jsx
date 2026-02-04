@@ -14,11 +14,15 @@ import { useState } from "react";
 import { BtnClose } from "../../ui/buttons/BtnClose";
 import Swal from "sweetalert2";
 
+import { useCategoriasStore } from "../../../store/CategoriasStore";
+
 export function ModalMasivoPrecios({ onClose }) {
     const queryClient = useQueryClient();
     const { actualizarPreciosMasivo } = useProductosStore();
     const { dataempresa } = useEmpresaStore();
     const { mostrarCliPro, dataclipro, selectCliPro, cliproItemSelect } = useClientesProveedoresStore();
+    const { datacategorias, selectCategoria, idCategoria } = useCategoriasStore();
+
     const [porcentaje, setPorcentaje] = useState(0);
     const [tipoCambio, setTipoCambio] = useState("VENTA");
 
@@ -35,9 +39,16 @@ export function ModalMasivoPrecios({ onClose }) {
     } = useForm();
 
     const onSubmit = async (data) => {
+        if (!cliproItemSelect && !idCategoria) {
+            Swal.fire("Error", "Debe seleccionar un proveedor o una categoría.", "error");
+            return;
+        }
+
+        const detallenombre = (cliproItemSelect?.nombres || "") + (idCategoria ? (cliproItemSelect ? " y " : "") + idCategoria.nombre : "");
+
         Swal.fire({
             title: "¿Estás seguro?",
-            text: `Se actualizarán los precios de ${tipoCambio.toLowerCase()} en un ${porcentaje}% para el proveedor ${cliproItemSelect.nombres}.`,
+            text: `Se actualizarán los precios de ${tipoCambio.toLowerCase()} en un ${porcentaje}% para: ${detallenombre}.`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#3085d6",
@@ -50,7 +61,8 @@ export function ModalMasivoPrecios({ onClose }) {
                     await actualizarPreciosMasivo({
                         _id_empresa: dataempresa.id,
                         _porcentaje: parseFloat(porcentaje),
-                        _id_proveedor: cliproItemSelect.id,
+                        _id_proveedor: cliproItemSelect?.id || null,
+                        _id_categoria: idCategoria?.id || null,
                         _tipo_cambio: tipoCambio
                     });
                     await queryClient.invalidateQueries({ queryKey: ["mostrar productos"] });
@@ -93,15 +105,25 @@ export function ModalMasivoPrecios({ onClose }) {
                         </article>
 
                         <ContainerSelector>
-                            <label>Proveedor (Obligatorio): </label>
+                            <label>Proveedor (Opcional): </label>
                             <SelectList
                                 data={dataclipro}
                                 itemSelect={cliproItemSelect}
                                 onSelect={selectCliPro}
                                 displayField="nombres"
                             />
-                            {!cliproItemSelect && <span style={{ fontSize: "12px", color: "#f44336" }}>Debe seleccionar un proveedor.</span>}
                         </ContainerSelector>
+
+                        <ContainerSelector>
+                            <label>Categoría (Opcional): </label>
+                            <SelectList
+                                data={datacategorias}
+                                itemSelect={idCategoria}
+                                onSelect={selectCategoria}
+                                displayField="nombre"
+                            />
+                        </ContainerSelector>
+                        {(!cliproItemSelect && !idCategoria) && <span style={{ fontSize: "12px", color: "#f44336" }}>Debe seleccionar un proveedor o una categoría.</span>}
 
                         <ContainerSelector>
                             <label>Tipo de Actualización: </label>
@@ -148,7 +170,7 @@ export function ModalMasivoPrecios({ onClose }) {
                             icono={<v.iconoguardar />}
                             titulo="Actualizar Precios"
                             bgcolor="#F9D70B"
-                            disabled={!cliproItemSelect}
+                            disabled={!cliproItemSelect && !idCategoria}
                         />
                         <Btn1
                             icono={<v.iconoflechaderecha />}
