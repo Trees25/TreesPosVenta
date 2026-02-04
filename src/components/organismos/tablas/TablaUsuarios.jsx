@@ -2,7 +2,7 @@ import styled from "styled-components";
 import {
   ContentAccionesTabla,
   useCategoriasStore,
-  Paginacion,ImagenContent, Icono,
+  Paginacion, ImagenContent, Icono,
   useUsuariosStore
 } from "../../../index";
 import Swal from "sweetalert2";
@@ -25,14 +25,14 @@ export function TablaUsuarios({
   setdataSelect,
   setAccion,
 }) {
-  if (data==null) return;
+  if (data == null) return;
   const [pagina, setPagina] = useState(1);
   const [datas, setData] = useState(data);
   const [columnFilters, setColumnFilters] = useState([]);
-   const queryClient = useQueryClient()
+  const queryClient = useQueryClient()
   const { eliminarUsuarioAsignado } = useUsuariosStore();
   function eliminar(p) {
-  
+
     Swal.fire({
       title: "¿Estás seguro(a)(e)?",
       text: "Una vez eliminado, ¡no podrá recuperar este registro!",
@@ -63,12 +63,16 @@ export function TablaUsuarios({
     setAccion("Editar");
   }
   const columns = [
-   
-   
+
+
     {
       accessorKey: "usuario",
       header: "Usuario",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Usuario" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -79,7 +83,11 @@ export function TablaUsuarios({
     {
       accessorKey: "email",
       header: "Email",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Email" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -90,7 +98,11 @@ export function TablaUsuarios({
     {
       accessorKey: "sucursal",
       header: "Sucursal",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Sucursal" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -101,7 +113,11 @@ export function TablaUsuarios({
     {
       accessorKey: "caja",
       header: "Caja",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Caja" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -112,7 +128,11 @@ export function TablaUsuarios({
     {
       accessorKey: "rol",
       header: "Rol",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Rol" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -123,7 +143,11 @@ export function TablaUsuarios({
     {
       accessorKey: "estadouser",
       header: "Estado",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Estado" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -169,9 +193,9 @@ export function TablaUsuarios({
           prev.map((row, index) =>
             index === rowIndex
               ? {
-                  ...prev[rowIndex],
-                  [columnId]: value,
-                }
+                ...prev[rowIndex],
+                [columnId]: value,
+              }
               : row
           )
         ),
@@ -204,9 +228,8 @@ export function TablaUsuarios({
                     <div
                       onMouseDown={header.getResizeHandler()}
                       onTouchStart={header.getResizeHandler()}
-                      className={`resizer ${
-                        header.column.getIsResizing() ? "isResizing" : ""
-                      }`}
+                      className={`resizer ${header.column.getIsResizing() ? "isResizing" : ""
+                        }`}
                     />
                   </th>
                 ))}
@@ -214,21 +237,21 @@ export function TablaUsuarios({
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.map(item=>(
-              
-                <tr key={item.id}>
-                  {item.getVisibleCells().map(cell => (
-                  
-                      <td key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
-                    
-                  ))}
-                </tr>
-             
+            {table.getRowModel().rows.map(item => (
+
+              <tr key={item.id}>
+                {item.getVisibleCells().map(cell => (
+
+                  <td key={cell.id}>
+                    {flexRender(
+                      cell.column.columnDef.cell,
+                      cell.getContext()
+                    )}
+                  </td>
+
+                ))}
+              </tr>
+
             ))}
           </tbody>
         </table>
@@ -282,7 +305,7 @@ const Container = styled.div`
       }
       th {
         
-        border-bottom: 2px solid ${({theme})=>theme.color2};
+        border-bottom: 2px solid ${({ theme }) => theme.color2};
         font-weight:700;
         text-align: center;
         color: ${({ theme }) => theme.text};

@@ -67,8 +67,9 @@ const Container = styled.div`
   display: grid;
   gap: 10px;
   grid-template:
-    "header" 80px
-    "main" auto;
+    "header" auto
+    "main" auto
+    "footer" auto;
 
   animation: ${blur_in} 0.5s linear both;
   @media ${Device.desktop} {

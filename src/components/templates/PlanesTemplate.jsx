@@ -179,6 +179,10 @@ const Header = styled.div`
         background: linear-gradient(90deg, #1cb0f6, #009ee3);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+
+        @media (max-width: 768px) {
+            font-size: 1.8rem;
+        }
     }
     p {
         font-size: 1.2rem;
@@ -186,6 +190,10 @@ const Header = styled.div`
         span {
             font-weight: bold;
             color: #00ca91;
+        }
+
+        @media (max-width: 768px) {
+            font-size: 1rem;
         }
     }
 `;
@@ -237,12 +245,13 @@ const SaveTag = styled.span`
 
 const GridPlanes = styled.div`
     display: grid;
-    grid-template-columns: repeat(2, 1fr); // Adjusted for 2 plans
+    grid-template-columns: 1fr;
     gap: 30px;
     width: 100%;
-    max-width: 800px; // Adjusted width
-    @media ${Device.tablet} {
-        grid-template-columns: 1fr;
+    max-width: 800px;
+
+    @media (min-width: 768px) {
+        grid-template-columns: repeat(2, 1fr);
     }
 `;
 
@@ -256,6 +265,11 @@ const Card = styled.div`
     position: relative;
     border: 2px solid ${({ $popular }) => ($popular ? "#1cb0f6" : "transparent")};
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    @media (max-width: 768px) {
+        padding: 30px 20px;
+    }
+
     &:hover {
         transform: translateY(-10px);
         box-shadow: 0 20px 40px rgba(0,0,0,0.1);
@@ -288,6 +302,10 @@ const Price = styled.div`
     .currency { font-size: 1.5rem; vertical-align: top; margin-right: 5px; }
     .amount { font-size: 3rem; font-weight: 800; }
     .period { color: ${({ theme }) => theme.colorSubtitle}; margin-left: 5px; }
+
+    @media (max-width: 768px) {
+        .amount { font-size: 2.2rem; }
+    }
 `;
 
 const YearlyTotal = styled.p`

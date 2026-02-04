@@ -67,7 +67,11 @@ export function TablaInventarios({
     {
       accessorKey: "fecha",
       header: "Fecha",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Fecha" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -78,7 +82,11 @@ export function TablaInventarios({
     {
       accessorKey: "almacen.sucursales.nombre",
       header: "Sucursal",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Sucursal" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -89,7 +97,11 @@ export function TablaInventarios({
     {
       accessorKey: "almacen.nombre",
       header: "Almacen",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Almacen" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -100,7 +112,11 @@ export function TablaInventarios({
     {
       accessorKey: "detalle",
       header: "Movimiento",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Movimiento" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -111,7 +127,11 @@ export function TablaInventarios({
     {
       accessorKey: "origen",
       header: "Origen",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Origen" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -122,7 +142,11 @@ export function TablaInventarios({
     {
       accessorKey: "tipo_movimiento",
       header: "Tipo",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Tipo" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -133,7 +157,11 @@ export function TablaInventarios({
     {
       accessorKey: "cantidad",
       header: "Cantidad",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Cantidad" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -159,9 +187,9 @@ export function TablaInventarios({
           prev.map((row, index) =>
             index === rowIndex
               ? {
-                  ...prev[rowIndex],
-                  [columnId]: value,
-                }
+                ...prev[rowIndex],
+                [columnId]: value,
+              }
               : row
           )
         ),
@@ -194,9 +222,8 @@ export function TablaInventarios({
                     <div
                       onMouseDown={header.getResizeHandler()}
                       onTouchStart={header.getResizeHandler()}
-                      className={`resizer ${
-                        header.column.getIsResizing() ? "isResizing" : ""
-                      }`}
+                      className={`resizer ${header.column.getIsResizing() ? "isResizing" : ""
+                        }`}
                     />
                   </th>
                 ))}

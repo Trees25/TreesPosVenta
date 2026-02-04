@@ -8,7 +8,7 @@ import { useCajasStore } from "../../store/CajasStore";
 import { RegistrarCaja } from "../organismos/formularios/RegistrarCaja";
 import { AnimatedGrid } from "../ui/animated/AnimatedGrid";
 import { ListAlmacenes } from "../organismos/AlmacenesDesign/ListAlmacenes";
-import {RegistrarAlmacen} from "../organismos/formularios/RegistrarAlmacen"
+import { RegistrarAlmacen } from "../organismos/formularios/RegistrarAlmacen"
 import { useAlmacenesStore } from "../../store/AlmacenesStore";
 export const AlmacenesTemplate = () => {
   const { stateSucursal, setStateSucursal } = useSucursalesStore();
@@ -24,7 +24,7 @@ export const AlmacenesTemplate = () => {
         <Header>
           <Title>Almacenes por sucursal</Title>
           <Subtitle>gestiona tus almacenes por sucursal</Subtitle>
-         
+
         </Header>
       </section>
       <section className="area2">
@@ -35,21 +35,29 @@ export const AlmacenesTemplate = () => {
   );
 };
 const Container = styled.div`
-  height: 100vh;
+  min-height: 100vh;
+  height: auto;
   display: grid;
   position: relative;
   grid-template:
-    "area1" 300px
+    "area1" auto
     "area2" auto;
+  gap: 20px;
+
+  @media (min-width: 768px) {
+    grid-template:
+      "area1" 300px
+      "area2" auto;
+  }
+
   .area1 {
     grid-area: area1;
-    /* background-color: rgba(7, 237, 45, 0.14); */
     display: flex;
     flex-direction: column;
+    padding-top: 20px;
   }
   .area2 {
     grid-area: area2;
-    /* background-color: rgba(237, 7, 221, 0.14); */
     padding-bottom: 20px;
   }
 `;

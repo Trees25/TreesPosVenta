@@ -18,9 +18,9 @@ import { TablaUsuarios } from "../organismos/tablas/TablaUsuarios";
 export function UsuariosTemplate() {
   const [openRegistro, SetopenRegistro] = useState(false);
   const [dataSelect, setdataSelect] = useState([]);
-  const {setItemSelect} = useUsuariosStore()
+  const { setItemSelect } = useUsuariosStore()
   const [isExploding, setIsExploding] = useState(false);
-  const {accion,setAccion,datausuariosAsignados,setBuscador} = useAsignacionCajaSucursalStore()
+  const { accion, setAccion, datausuariosAsignados, setBuscador } = useAsignacionCajaSucursalStore()
   function nuevoRegistro() {
     SetopenRegistro(!openRegistro);
     setAccion("Nuevo");
@@ -45,7 +45,7 @@ export function UsuariosTemplate() {
         <Btn1
           funcion={nuevoRegistro}
           bgcolor={v.colorPrincipal}
-          titulo="nuevo"
+          titulo="Nuevo"
           icono={<v.iconoagregar />}
         />
       </section>
@@ -66,32 +66,50 @@ export function UsuariosTemplate() {
   );
 }
 const Container = styled.div`
-  height: calc(100vh - 80px);
+  min-height: calc(100vh - 80px);
+  height: auto;
 
   margin-top: 50px;
   padding: 15px;
   display: grid;
   grid-template:
-    "area1" 60px
-    "area2" 60px
+    "area1" auto
+    "area2" auto
     "main" auto;
+  gap: 15px;
+
+  @media (min-width: 768px) {
+    grid-template:
+      "area1" 60px
+      "area2" 60px
+      "main" auto;
+  }
+
   .area1 {
     grid-area: area1;
-    /* background-color: rgba(103, 93, 241, 0.14); */
     display: flex;
-    justify-content: end;
+    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: center;
     align-items: center;
     gap: 15px;
+
+    @media (min-width: 768px) {
+      flex-direction: row;
+      justify-content: end;
+    }
   }
   .area2 {
     grid-area: area2;
-    /* background-color: rgba(7, 237, 45, 0.14); */
     display: flex;
-    justify-content: end;
+    justify-content: center;
     align-items: center;
+
+    @media (min-width: 768px) {
+      justify-content: end;
+    }
   }
   .main {
     grid-area: main;
-    /* background-color: rgba(237, 7, 221, 0.14); */
   }
 `;

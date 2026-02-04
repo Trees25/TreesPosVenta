@@ -70,7 +70,7 @@ export async function EditarUsuarios(p) {
       await InsertarPermisos(pp);
     }
   } else {
-    console.log("No hay módulos seleccionados, se mantiene la configuración actual");
+    // console.log("No hay módulos seleccionados, se mantiene la configuración actual");
     // ⚠️ Ya no se lanza error — simplemente no se hace nada con los módulos
   }
 

@@ -81,15 +81,24 @@ export function FooterPos() {
 }
 const Footer = styled.section`
   grid-area: footer;
-  /* background-color: rgba(57, 231, 26, 0.5); */
-  display: none;
+  display: flex; /* Visible on mobile */
+  width: 100%;
+  overflow-x: auto; /* Allow horizontal scroll for buttons on narrow screens */
+  padding: 5px 0;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 
   @media ${Device.desktop} {
-    display: flex;
+    overflow-x: visible;
   }
   .content {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: max-content; /* Ensure buttons don't shrink */
   }
 `;

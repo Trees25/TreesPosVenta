@@ -430,7 +430,8 @@ export const IngresoCobro = forwardRef((props, ref) => {
 const Container = styled.div`
   position: relative;
   box-sizing: border-box;
-  width: 400px;
+  width: 100%;
+  max-width: 450px;
   padding: 20px;
   border-radius: 10px;
   box-shadow: 2px 2px 15px 0px #e2e2e2;
@@ -454,7 +455,7 @@ const Container = styled.div`
     position: absolute;
     left: 5px;
     height: 6px;
-    width: 380px;
+    width: calc(100% - 20px);
   }
   &:before {
     top: -5px;

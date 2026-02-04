@@ -2,7 +2,7 @@ import styled from "styled-components";
 import {
   ContentAccionesTabla,
   useCategoriasStore,
-  Paginacion,ImagenContent, Icono,
+  Paginacion, ImagenContent, Icono,
   useClientesProveedoresStore
 } from "../../../index";
 import Swal from "sweetalert2";
@@ -23,7 +23,7 @@ export function TablaClientesProveedores({
   setdataSelect,
   setAccion,
 }) {
-  if (data==null) return;
+  if (data == null) return;
   const [pagina, setPagina] = useState(1);
   const [datas, setData] = useState(data);
   const [columnFilters, setColumnFilters] = useState([]);
@@ -68,12 +68,16 @@ export function TablaClientesProveedores({
     setAccion("Editar");
   }
   const columns = [
-  
-   
+
+
     {
       accessorKey: "nombres",
       header: "Descripcion",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Descripcion" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -84,7 +88,11 @@ export function TablaClientesProveedores({
     {
       accessorKey: "direccion",
       header: "Direccion",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Direccion" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -96,7 +104,11 @@ export function TablaClientesProveedores({
     {
       accessorKey: "identificador_nacional",
       header: "Id nacional",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Id Nacional" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -104,10 +116,14 @@ export function TablaClientesProveedores({
         return filterStatuses.includes(status?.id);
       },
     },
-   {
+    {
       accessorKey: "identificador_fiscal",
       header: "Id fiscal",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Id Fiscal" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -118,7 +134,11 @@ export function TablaClientesProveedores({
     {
       accessorKey: "estado",
       header: "Estado",
-      cell: (info) => <span>{info.getValue()}</span>,
+      cell: (info) => (
+        <div data-title="Estado" className="ContentCell">
+          <span>{info.getValue()}</span>
+        </div>
+      ),
       enableColumnFilter: true,
       filterFn: (row, columnId, filterStatuses) => {
         if (filterStatuses.length === 0) return true;
@@ -164,9 +184,9 @@ export function TablaClientesProveedores({
           prev.map((row, index) =>
             index === rowIndex
               ? {
-                  ...prev[rowIndex],
-                  [columnId]: value,
-                }
+                ...prev[rowIndex],
+                [columnId]: value,
+              }
               : row
           )
         ),
@@ -199,9 +219,8 @@ export function TablaClientesProveedores({
                     <div
                       onMouseDown={header.getResizeHandler()}
                       onTouchStart={header.getResizeHandler()}
-                      className={`resizer ${
-                        header.column.getIsResizing() ? "isResizing" : ""
-                      }`}
+                      className={`resizer ${header.column.getIsResizing() ? "isResizing" : ""
+                        }`}
                     />
                   </th>
                 ))}
@@ -209,21 +228,21 @@ export function TablaClientesProveedores({
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.map(item=>(
-              
-                <tr key={item.id}>
-                  {item.getVisibleCells().map(cell => (
-                  
-                      <td key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
-                    
-                  ))}
-                </tr>
-             
+            {table.getRowModel().rows.map(item => (
+
+              <tr key={item.id}>
+                {item.getVisibleCells().map(cell => (
+
+                  <td key={cell.id}>
+                    {flexRender(
+                      cell.column.columnDef.cell,
+                      cell.getContext()
+                    )}
+                  </td>
+
+                ))}
+              </tr>
+
             ))}
           </tbody>
         </table>
@@ -277,7 +296,7 @@ const Container = styled.div`
       }
       th {
         
-        border-bottom: 2px solid ${({theme})=>theme.color2};
+        border-bottom: 2px solid ${({ theme }) => theme.color2};
         font-weight:700;
         text-align: center;
         color: ${({ theme }) => theme.text};

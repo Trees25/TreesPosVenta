@@ -134,24 +134,45 @@ const Container = styled.div`
   padding: 15px;
   display: grid;
   grid-template:
-    "area1" 60px
-    "area2" 60px
+    "area1" auto
+    "area2" auto
     "main" auto
     "footer" 60px;
+  gap: 15px;
+
+  @media (min-width: 768px) {
+    grid-template:
+      "area1" 60px
+      "area2" 60px
+      "main" auto
+      "footer" 60px;
+  }
+
   .area1 {
     grid-area: area1;
-    /* background-color: rgba(103, 93, 241, 0.14); */
     display: flex;
-    justify-content: end;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
+    padding-bottom: 10px;
+
+    @media (min-width: 768px) {
+      flex-direction: row;
+      justify-content: end;
+      padding-bottom: 0;
+      gap: 15px;
+    }
   }
   .area2 {
     grid-area: area2;
-    /* background-color: rgba(7, 237, 45, 0.14); */
     display: flex;
-    justify-content: end;
+    justify-content: center;
     align-items: center;
+
+    @media (min-width: 768px) {
+      justify-content: end;
+    }
   }
   .main {
     grid-area: main;

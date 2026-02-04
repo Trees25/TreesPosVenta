@@ -189,7 +189,7 @@ export const useSuscripcionesStore = create((set) => ({
                 errorSus = error;
             }
 
-            if (errorSus) console.error("Error no bloqueante al actualizar suscripción remota:", errorSus);
+            // if (errorSus) console.error("Error no bloqueante al actualizar suscripción remota:", errorSus);
         } catch (error) {
             console.error("Error de conexión con servicio de suscripciones (omitido para permitir ingreso):", error);
         }

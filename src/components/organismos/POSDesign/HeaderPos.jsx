@@ -32,7 +32,7 @@ export function HeaderPos() {
   const [stateListaproductos, setStateListaproductos] = useState(false);
   const { setBuscador, dataProductos, selectProductos, buscador } =
     useProductosStore();
-  
+
   const { datausuarios } = useUsuariosStore();
   const { dataStockXAlmacenesYProducto, setStateModal } = useStockStore();
 
@@ -95,7 +95,7 @@ export function HeaderPos() {
       _descripcion: productosItemSelect.nombre,
       _id_producto: productosItemSelect.id,
       _precio_compra: productosItemSelect.precio_compra,
-      _id_sucursal:  dataCierreCaja?.caja?.id_sucursal,
+      _id_sucursal: dataCierreCaja?.caja?.id_sucursal,
       _id_almacen: almacenSelectItem?.id,
     };
     console.log("pDetalleVentas", pDetalleVentas);
@@ -120,10 +120,10 @@ export function HeaderPos() {
     const value = Math.max(0, parseFloat(e.target.value));
     setCantidadInput(value);
   };
-  const {mutate} = useEliminarVentasIncompletasMutate();
+  const { mutate } = useEliminarVentasIncompletasMutate();
   useEffect(() => {
     buscadorRef.current.focus();
-   mutate()
+    mutate()
   }, []);
   useEffect(() => {
     let timeout;
@@ -157,15 +157,15 @@ export function HeaderPos() {
   return (
     <Header>
       <ContentSucursal>
-      <div>
-         <strong>SUCURSAL:&nbsp; </strong>{" "}
-        {dataCierreCaja.caja?.sucursales?.nombre}
-      </div>
-      |
-       <div>
-       <strong>CAJA:&nbsp; </strong>{" "}
-       {dataCierreCaja.caja?.descripcion}
-       </div>
+        <div>
+          <strong>SUCURSAL:&nbsp; </strong>{" "}
+          {dataCierreCaja.caja?.sucursales?.nombre}
+        </div>
+        |
+        <div>
+          <strong>CAJA:&nbsp; </strong>{" "}
+          {dataCierreCaja.caja?.descripcion}
+        </div>
 
       </ContentSucursal>
       <section className="contentprincipal">
@@ -175,7 +175,7 @@ export function HeaderPos() {
             <span>🧊{datausuarios?.roles?.nombre} </span>
           </div>
         </Contentuser>
-      
+
         <article className="contentfecha area3">
           <Reloj />
         </article>
@@ -220,8 +220,8 @@ export function HeaderPos() {
           </InputText2>
         </article>
         <article className="area2">
-          
-        
+
+
         </article>
       </section>
     </Header>
@@ -229,14 +229,18 @@ export function HeaderPos() {
 }
 const Header = styled.div`
   grid-area: header;
-  /* background-color: rgba(222, 18, 130, 0.5); */
   display: flex;
-  height: 100%;
+  min-height: 130px;
+  height: auto;
 
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
+  padding-bottom: 5px;
+  
   @media ${Device.desktop} {
+    min-height: 130px;
     border-bottom: 1px solid ${({ theme }) => theme.color2};
+    gap: 20px;
   }
 
   .contentprincipal {

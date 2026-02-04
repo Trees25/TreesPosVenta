@@ -27,11 +27,11 @@ export function AlertasStockTablas({ data }) {
                             <tbody>
                                 {stockBajo.map((item, index) => (
                                     <tr key={index}>
-                                        <td>{item.nombre}</td>
-                                        <td>{item.almacen}</td>
-                                        <td>{item.stock}</td>
-                                        <td>{item.stock_minimo}</td>
-                                        <td>
+                                        <td data-title="Producto">{item.nombre}</td>
+                                        <td data-title="Almacén">{item.almacen}</td>
+                                        <td data-title="Stock Actual">{item.stock}</td>
+                                        <td data-title="Stock Min.">{item.stock_minimo}</td>
+                                        <td data-title="Estado">
                                             <Badge $tipo="bajo">{item.estado}</Badge>
                                         </td>
                                     </tr>
@@ -59,11 +59,11 @@ export function AlertasStockTablas({ data }) {
                             <tbody>
                                 {vencimientos.map((item, index) => (
                                     <tr key={index}>
-                                        <td>{item.nombre}</td>
-                                        <td>{item.almacen}</td>
-                                        <td>{item.fecha_vencimiento}</td>
-                                        <td>{item.dias_para_vencer}</td>
-                                        <td>
+                                        <td data-title="Producto">{item.nombre}</td>
+                                        <td data-title="Almacén">{item.almacen}</td>
+                                        <td data-title="Fecha Venc.">{item.fecha_vencimiento}</td>
+                                        <td data-title="Días Restantes">{item.dias_para_vencer}</td>
+                                        <td data-title="Estado">
                                             <Badge $tipo={item.estado === "VENCIDO" ? "vencido" : "por_vencer"}>
                                                 {item.estado}
                                             </Badge>
@@ -121,6 +121,39 @@ const StyledTable = styled.table`
     text-align: left;
     border-bottom: 1px solid ${({ theme }) => theme.border || "#e5e7eb"};
     color: ${({ theme }) => theme.text};
+
+    @media (max-width: 768px) {
+        display: block;
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+        &:before {
+            content: attr(data-title);
+            position: absolute;
+            left: 10px;
+            width: 45%;
+            padding-right: 10px;
+            white-space: nowrap;
+            text-align: left;
+            font-weight: bold;
+        }
+    }
+  }
+
+  thead {
+      @media (max-width: 768px) {
+          display: none;
+      }
+  }
+
+  tr {
+      @media (max-width: 768px) {
+          display: block;
+          border: 1px solid ${({ theme }) => theme.border || "#e5e7eb"};
+          margin-bottom: 15px;
+          border-radius: 8px;
+          overflow: hidden;
+      }
   }
 
   th {

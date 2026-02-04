@@ -338,7 +338,8 @@ const Container = styled.div`
   }
 
   .left-section {
-    width: 400px;
+    width: 100%;
+    max-width: 400px;
     margin: 10px;
     margin-top:20px;
     margin-bottom:20px;
