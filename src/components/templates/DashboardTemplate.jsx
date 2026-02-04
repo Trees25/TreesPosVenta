@@ -9,11 +9,13 @@ import { CardProductosTopMonto } from "../organismos/DashboardDesign/CardProduct
 import { ChartVentasMetodoPago } from "../organismos/DashboardDesign/ChartVentasMetodoPago";
 import { ChartVentasCategoria } from "../organismos/DashboardDesign/ChartVentasCategoria";
 import { useReportesStore } from "../../store/ReportesStore";
-import { useCalcularTotalVentasQuery } from "../../tanstack/ReportesStack";
+import { useCalcularTotalVentasQuery, useMostrarCantidadDetalleVentaDashboardQuery, useGananciasDetalleVentaQuery } from "../../tanstack/ReportesStack";
 
 export const DashboardTemplate = () => {
-  const { totalventas, porcentajeCambio, totalCantidadDetalleVentas, totalGanancias } = useReportesStore()
-  useCalcularTotalVentasQuery();
+  const { porcentajeCambio } = useReportesStore()
+  const { data: dataVentas } = useCalcularTotalVentasQuery();
+  const { data: dataCantidad } = useMostrarCantidadDetalleVentaDashboardQuery();
+  const { data: dataGanancias } = useGananciasDetalleVentaQuery();
   return (
     <Container>
       <DashboardHeader />
@@ -22,24 +24,23 @@ export const DashboardTemplate = () => {
           <ContentTotales>
             <CardTotales
               percentage={porcentajeCambio}
-              value={totalventas}
+              value={dataVentas ?? 0}
               title="Ventas"
               icon={"mdi:dollar"}
             />
           </ContentTotales>
           <ContentTotales>
             <CardTotales
-
-              value={totalCantidadDetalleVentas}
+              isCurrency={false}
+              value={dataCantidad ?? 0}
               title="Cant. Productos vendidos"
               icon={"fluent-mdl2:product-variant"}
             />
           </ContentTotales>
           <ContentTotales>
             <CardTotales
-
-              value={totalGanancias}
-              title="Ganancias"
+              value={dataGanancias ?? 0}
+              title="Utilidad bruta"
               icon={"hugeicons:money-send-circle"}
             />
           </ContentTotales>

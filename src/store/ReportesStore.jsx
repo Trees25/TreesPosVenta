@@ -20,47 +20,75 @@ export const useReportesStore = create((set, get) => ({
       fecha_fin: p._fecha_fin
     });
     if (error) console.error("Error calculating total ventas:", error);
-    set({ totalventas: data || 0 });
+    console.log("RPC rpc_sumar_ventas Result:", data);
+    const total = data ?? 0;
+    set({ totalventas: total });
     get().setCalcularPorcentajeCambio();
-    return data;
+    return total;
   },
   mostrarVentasDashboard: async (p) => {
-    const { data } = await supabase.rpc("dashboartotalventasconfechas", p);
+    const { data } = await supabase.rpc("dashboartotalventasconfechas", {
+      _id_empresa: p._id_empresa,
+      _fecha_inicio: p._fecha_inicio,
+      _fecha_fin: p._fecha_fin
+    });
     return data;
   },
   mostrarCantidadDetalleVentasDashboard: async (p) => {
     const { data } = await supabase.rpc(
-      "dashboardsumarcantidaddetalleventa",
-      p
+      "rpc_sumar_cantidad_productos",
+      {
+        p_id_empresa: p._id_empresa,
+        fecha_ini: p._fecha_inicio,
+        fecha_fin: p._fecha_fin
+      }
     );
-    set({ totalCantidadDetalleVentas: data })
-    return data;
+    console.log("RPC rpc_sumar_cantidad_productos Result:", data);
+    const total = data ?? 0;
+    set({ totalCantidadDetalleVentas: total });
+    return total;
   },
   mostrarVentasDashboardPeriodoAnterior: async (p) => {
     const { data, error } = await supabase.rpc(
       "dashboardsumarventasporempresaperiodoanterior",
-      p
+      {
+        _id_empresa: p._id_empresa,
+        _fecha_inicio: p._fecha_inicio,
+        _fecha_fin: p._fecha_fin
+      }
     );
-    set({ totalventasAnterior: data });
+    const total = data?.[0]?.total_ventas ?? data ?? 0;
+    set({ totalventasAnterior: total });
     get().setCalcularPorcentajeCambio();
     if (error) {
       throw new Error(error.message);
     }
-    return data;
+    return total;
   },
   mostrarGananciasDetalleVenta: async (p) => {
     const { data, error } = await supabase.rpc(
-      "dashboardsumargananciadetalleventa",
-      p
+      "rpc_sumar_ganancias",
+      {
+        p_id_empresa: p._id_empresa,
+        fecha_ini: p._fecha_inicio,
+        fecha_fin: p._fecha_fin
+      }
     );
     if (error) {
+      console.error("Error calculating total ganancias:", error);
       throw new Error(error.message);
     }
-    set({ totalGanancias: data })
-    return data;
+    console.log("RPC rpc_sumar_ganancias Result:", data);
+    const total = data ?? 0;
+    set({ totalGanancias: total });
+    return total;
   },
   mostrarVentasXMetodoPago: async (p) => {
-    const { data, error } = await supabase.rpc("reporte_ventas_metodo_pago", p);
+    const { data, error } = await supabase.rpc("reporte_ventas_metodo_pago", {
+      _id_empresa: p._id_empresa,
+      _fecha_inicio: p._fecha_inicio,
+      _fecha_fin: p._fecha_fin
+    });
     if (error) {
       console.error("Error en mostrarVentasXMetodoPago:", error);
       throw new Error(error.message);
@@ -69,7 +97,11 @@ export const useReportesStore = create((set, get) => ({
     return data;
   },
   mostrarVentasXCategoria: async (p) => {
-    const { data, error } = await supabase.rpc("reporte_ventas_categoria", p);
+    const { data, error } = await supabase.rpc("reporte_ventas_categoria", {
+      _id_empresa: p._id_empresa,
+      _fecha_inicio: p._fecha_inicio,
+      _fecha_fin: p._fecha_fin
+    });
     if (error) {
       console.error("Error en mostrarVentasXCategoria:", error);
       throw new Error(error.message);
