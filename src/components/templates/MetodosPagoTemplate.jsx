@@ -28,7 +28,7 @@ export function MetodosPagoTemplate() {
   }
   return (
     <Container>
-      <Toaster richColors position="top-right"/>
+      <Toaster richColors position="top-right" />
       {openRegistro && (
         <RegistrarMetodosPago setIsExploding={setIsExploding}
           onClose={() => SetopenRegistro(!openRegistro)}
@@ -45,7 +45,7 @@ export function MetodosPagoTemplate() {
           icono={<v.iconoagregar />}
         />
       </section>
-     
+
 
       <section className="main">
         {isExploding && <ConfettiExplosion />}
@@ -68,7 +68,7 @@ const Container = styled.div`
     grid-area: area1;
     /* background-color: rgba(103, 93, 241, 0.14); */
     display: flex;
-    justify-content: end;
+    justify-content: start;
     align-items: center;
     gap: 15px;
   }
@@ -76,7 +76,7 @@ const Container = styled.div`
     grid-area: area2;
     /* background-color: rgba(7, 237, 45, 0.14); */
     display: flex;
-    justify-content: end;
+    justify-content: start;
     align-items: center;
   }
   .main {

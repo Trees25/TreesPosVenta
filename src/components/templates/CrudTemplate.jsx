@@ -99,7 +99,7 @@ const Container = styled.div`
 
     @media (min-width: 768px) {
       flex-direction: row;
-      justify-content: end;
+      justify-content: start;
       gap: 15px;
       padding-bottom: 0;
     }
@@ -112,7 +112,7 @@ const Container = styled.div`
     align-items: center;
 
     @media (min-width: 768px) {
-      justify-content: end;
+      justify-content: start;
     }
   }
   .main {

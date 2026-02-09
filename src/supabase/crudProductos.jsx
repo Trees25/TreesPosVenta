@@ -19,8 +19,8 @@ export async function InsertarProductosMasivo(data) {
 
 export async function MostrarProductos(p) {
   const pag = p.pagina || 1;
-  const from = (pag - 1) * 6;
-  const to = from + 5;
+  const from = (pag - 1) * 10;
+  const to = from + 9;
   let query = supabase.from(tabla).select("*, categorias(nombre), clientes_proveedores(nombres)", { count: "exact" }).eq("id_empresa", p.id_empresa).range(from, to);
 
   if (p.id_categoria) {

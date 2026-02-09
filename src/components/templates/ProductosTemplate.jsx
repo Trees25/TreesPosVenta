@@ -30,7 +30,7 @@ export function ProductosTemplate() {
   const [isExploding, setIsExploding] = useState(false);
   const [openMasivoPrecios, setOpenMasivoPrecios] = useState(false);
 
-  const totalPaginas = Math.ceil(totalRegistros / 6) || 1;
+  const totalPaginas = Math.ceil(totalRegistros / 10) || 1;
 
   function nuevoRegistro() {
     SetopenRegistro(!openRegistro);
@@ -288,7 +288,7 @@ const Container = styled.div`
 
     @media (min-width: 768px) {
       flex-direction: row;
-      justify-content: end;
+      justify-content: start;
       gap: 15px;
       padding-bottom: 0;
     }
@@ -304,7 +304,7 @@ const Container = styled.div`
 
     @media (min-width: 768px) {
       flex-direction: row;
-      justify-content: end;
+      justify-content: start;
       gap: 15px;
     }
     .filtros {

@@ -41,33 +41,12 @@ export function LoginTemplate() {
     },
   });
 
-  const manejadorEmailSesionTester = async () => {
-    try {
-      await loginAsync({ email: "tester1@gmail.com", password: "123456" });
-    } catch (error) {
-      if (error.message.includes("Invalid login credentials") || error.message.includes("not found")) {
-        try {
-          await registerAsync({ email: "tester1@gmail.com", password: "123456" });
-          toast.success("Usuario invitado restaurado. Ingresando...");
-          setTimeout(() => window.location.reload(), 1500);
-        } catch (regError) {
-          toast.error("Error al restaurar invitado: " + regError.message);
-        }
-      } else {
-        toast.error("Error Login Invitado: " + error.message);
-      }
-    }
-  };
+
 
   const manejadorEmailSesion = (data) => {
     loginMutate({ email: data.email, password: data.password });
   };
-  const manejarCrearUSerTester = () => {
-    const response = Generarcodigo({ id: 2 });
-    const gmail = "@gmail.com";
-    const correoCompleto = response.toLowerCase() + gmail;
-    registerMutate({ email: correoCompleto, password: "123456" });
-  };
+
   return (
     <Container>
       <Toaster />
@@ -137,18 +116,6 @@ export function LoginTemplate() {
             <PanelModo>
               <VolverBtn funcion={() => setStateModos(!stateModos)} />
               <span>Modo super admin</span>
-              <Btn1
-                disabled={isPending}
-                funcion={manejarCrearUSerTester}
-                border="2px"
-                titulo="MODO INVITADO"
-                bgcolor="#f6ce1c"
-                color="255,255,255"
-                width="100%"
-              />
-              <Linea>
-                <span>0</span>
-              </Linea>
               <Btn1
                 border="2px"
                 funcion={loginGoogle}

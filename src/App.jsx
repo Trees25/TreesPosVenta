@@ -11,13 +11,12 @@ import {
 import { Device } from "./styles/breakpoints";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 function App() {
   const { setTheme } = useThemeStore();
   const { datausuarios } = useUsuariosStore();
   const location = useLocation();
-  const themeStyle = datausuarios?.tema ==="light"?Light:Dark
+  const themeStyle = datausuarios?.tema === "light" ? Light : Dark
   useEffect(() => {
     if (location.pathname === "/login") {
       setTheme({
@@ -41,7 +40,6 @@ function App() {
 
         <MyRoutes />
 
-        <ReactQueryDevtools initialIsOpen={true} />
       </AuthContextProvider>
     </ThemeProvider>
   );

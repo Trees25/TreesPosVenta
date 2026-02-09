@@ -43,23 +43,10 @@ export const ProtectedRoute = ({ children, accessBy }) => {
       }
 
       // --- LOGIC DE VENCIMIENTO ---
-      const esInvitado = datausuarios?.email === "tester1@gmail.com";
       const now = new Date();
       let diasRestantes = 100; // Valor seguro por defecto
 
-      if (esInvitado && user?.created_at) {
-        // Invitado: Vence a las 24hs de crearse
-        const fechaCreacion = new Date(user.created_at);
-        const fechaVencimiento = new Date(fechaCreacion.getTime() + (24 * 60 * 60 * 1000));
-        const diffTime = fechaVencimiento - now;
-        diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        // Bloqueo estricto para invitado si ya venció
-        if (diasRestantes <= 0 && location.pathname !== "/membresias") {
-          return <Navigate to="/membresias" />;
-        }
-
-      } else if (dataempresa?.fecha_vencimiento) {
+      if (dataempresa?.fecha_vencimiento) {
         // Usuario Normal: Vence según fecha en DB
         const fechaVencimiento = new Date(dataempresa.fecha_vencimiento);
         const diffTime = fechaVencimiento - now;

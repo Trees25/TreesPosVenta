@@ -75,14 +75,8 @@ export function Layout({ children }) {
   }
 
   // --- LOGIC FOR TRIAL STATUS ---
-  const esInvitado = datausuarios?.email === "tester1@gmail.com";
   const isSuperUser = datausuarios?.correo === "trees.sanjuan@gmail.com";
   let fechaLimiteRender = dataEmpresa?.fecha_vencimiento ? new Date(dataEmpresa.fecha_vencimiento) : null;
-
-  if (esInvitado && user?.created_at) {
-    // Si es invitado, vence a las 24 horas de la creación de la cuenta AUTH
-    fechaLimiteRender = new Date(new Date(user.created_at).getTime() + (24 * 60 * 60 * 1000));
-  }
 
   return (
     <Container className={sidebarOpen ? "active" : ""}>
