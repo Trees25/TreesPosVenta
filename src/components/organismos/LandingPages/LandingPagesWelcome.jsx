@@ -6,7 +6,7 @@ import ScrollReveal from "scrollreveal";
 import { BtnLink } from "../../moleculas/BtnLink";
 import { useUsuariosStore } from "../../../store/UsuariosStore";
 export const LandingPagesWelcome = () => {
-  const {datausuarios} = useUsuariosStore()
+  const { datausuarios } = useUsuariosStore()
   useEffect(() => {
     ScrollReveal().reveal(".left-section", {
       origin: "left",
@@ -37,8 +37,8 @@ export const LandingPagesWelcome = () => {
           <LeftSection className="left-section">
             <h1>Bienvenido al PosVenta de Trees</h1>
             <div style={{ display: "flex", gap: "10px" }}>
-            <BtnLink url={"https://treestech.dev"} color={"#fff"} bgcolor={"#ff6a00"} titulo={"Contactanos"} />
-              <BtnLink url={"https://youtube.com"} color={"#2f2f2f"} bgcolor={"#ffffff"} titulo={"Como usar"} />
+              <BtnLink url={"https://treestech.dev"} color={"#fff"} bgcolor={"#ff6a00"} titulo={"Contactanos"} />
+              <BtnLink url={"https://languid-longship-1ed.notion.site/PosVenta-Trees-088939013ed448cf94fe9c7a9e75fa00?pvs=74"} color={"#2f2f2f"} bgcolor={"#ffffff"} titulo={"Como usar"} />
             </div>
           </LeftSection>
           <RightSection className="right-section">
@@ -75,7 +75,7 @@ export const LandingPagesWelcome = () => {
                   "https://qkzybkelsdmoezaaypou.supabase.co/storage/v1/object/public/imagenes/modulos/almacen.png"
                 }
               />
-               <CardFuncion
+              <CardFuncion
                 top="410px"
                 bgcontentimagen={"#52e0f9"}
                 left={"-50px"}
