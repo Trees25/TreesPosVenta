@@ -12,6 +12,7 @@ import { useSuscripcionesStore } from "../../store/SuscripcionStore";
 import { toast } from "sonner";
 import { useSucursalesStore } from "../../store/SucursalesStore";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "../../store/AuthStore";
 
 import { AsignarPermisosDefault } from "../../supabase/crudPermisos";
 
@@ -23,6 +24,7 @@ export function PlanesTemplate() {
     const { dataempresa } = useEmpresaStore();
     const { activarPruebaGratuita, cambiarPlan } = useSuscripcionesStore();
     const { dataSucursales, mostrarSucursales } = useSucursalesStore();
+    const { cerrarSesion } = useAuthStore();
 
     useEffect(() => {
         if (dataempresa?.id) {
@@ -84,8 +86,14 @@ export function PlanesTemplate() {
         navigate("/login?from_plan=true");
     };
 
-    const handleVolver = () => {
-        navigate("/login");
+    const handleVolver = async () => {
+        if (user) {
+            await cerrarSesion();
+            queryClient.clear();
+            navigate("/login", { replace: true });
+        } else {
+            navigate("/login");
+        }
     };
 
     return (

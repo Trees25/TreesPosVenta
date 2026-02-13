@@ -21,7 +21,7 @@ export const ProtectedRoute = ({ children, accessBy }) => {
     enabled: !!datausuarios,
   });
 
-  if (isLoadingPermisosGlobales) {
+  if (isLoadingPermisosGlobales && datausuarios && location.pathname !== "/planes") {
     return <span>cargando permisos...</span>;
   }
 
@@ -37,8 +37,13 @@ export const ProtectedRoute = ({ children, accessBy }) => {
     }
   } else if (accessBy === "authenticated") {
     if (user) {
+      // 0. 👑 Super User Bypass (Dueño)
+      const isSuperUser = datausuarios?.correo === "trees.sanjuan@gmail.com";
+      if (isSuperUser) return children;
+
       // 1. Verificar si tiene plan asignado (salvo que esté en /planes)
-      if (location.pathname !== "/planes" && !dataempresa?.id_plan) {
+      // Agregamos comprobación de que los datos de empresa han cargado para evitar bucles falsos positivos
+      if (location.pathname !== "/planes" && dataempresa && !dataempresa?.id_plan) {
         return <Navigate to="/planes" />;
       }
 
@@ -57,8 +62,8 @@ export const ProtectedRoute = ({ children, accessBy }) => {
         // 0 a -30: Gracia (Aviso molesto en Layout, pero deja pasar)
         // < -30: Bloqueo Total (Redirección a Membresías)
 
-        if (diasRestantes < -30 && location.pathname !== "/membresias") {
-          return <Navigate to="/membresias" />;
+        if (diasRestantes < -30 && location.pathname !== "/planes" && dataempresa) {
+          return <Navigate to="/planes" />;
         }
       }
 

@@ -1,6 +1,5 @@
-
-import { supabaseSus, supabase } from "../supabase/supabase.config"
 import { create } from "zustand"
+import { useEmpresaStore } from "./EmpresaStore"
 
 
 
@@ -203,6 +202,16 @@ export const useSuscripcionesStore = create((set) => ({
                 id_plan
             }
         }));
+
+        // 4. ACTUALIZAR EmpresaStore para evitar rebotes de ProtectedRoute
+        const { dataempresa, set_dataempresa } = useEmpresaStore.getState();
+        if (dataempresa) {
+            set_dataempresa({
+                ...dataempresa,
+                id_plan: id_plan,
+                fecha_vencimiento: fecha_fin.toISOString()
+            });
+        }
     },
     cambiarPlan: async (id_empresa, id_plan) => {
         // 1. Actualizar Empresa (Supabase Principal) - PRIORIDAD 1
@@ -226,7 +235,6 @@ export const useSuscripcionesStore = create((set) => ({
         }
 
         // 3. Update local state
-        // 3. Update local state
         set((state) => {
             const currentData = state.dataSuscripcion || {};
             // Si falta info crítica (ej. recarga en /planes), rellenamos con mock para que no se rompa la UI
@@ -245,5 +253,14 @@ export const useSuscripcionesStore = create((set) => ({
                 dataSuscripcion: { ...currentData, id_plan }
             };
         });
+
+        // 4. Sync EmpresaStore
+        const { dataempresa, set_dataempresa } = useEmpresaStore.getState();
+        if (dataempresa) {
+            set_dataempresa({
+                ...dataempresa,
+                id_plan: id_plan
+            });
+        }
     },
 }))

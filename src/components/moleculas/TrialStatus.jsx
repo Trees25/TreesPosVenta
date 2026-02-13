@@ -3,43 +3,43 @@ import { Device } from "../../styles/breakpoints";
 import { useNavigate } from "react-router-dom";
 
 export function TrialStatus({ fechaVencimiento }) {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    if (!fechaVencimiento) return null;
+  if (!fechaVencimiento) return null;
 
-    const now = new Date();
-    const diffTime = new Date(fechaVencimiento) - now;
-    const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const now = new Date();
+  const diffTime = new Date(fechaVencimiento) - now;
+  const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // Si ya venció
-    if (daysRemaining <= 0) {
-        return (
-            <Container $expired={true} onClick={() => navigate("/membresias")}>
-                <Content>
-                    <span className="icon">⚠️</span>
-                    <span className="text">
-                        Tu periodo de prueba ha finalizado. <strong>Haz click aquí para suscribirte</strong> y evitar el bloqueo.
-                    </span>
-                </Content>
-            </Container>
-        );
-    }
+  // Si ya venció
+  if (daysRemaining <= 0) {
+    return (
+      <Container $expired={true} onClick={() => navigate("/planes")}>
+        <Content>
+          <span className="icon">⚠️</span>
+          <span className="text">
+            Tu periodo de prueba ha finalizado. <strong>Haz click aquí para suscribirte</strong> y evitar el bloqueo.
+          </span>
+        </Content>
+      </Container>
+    );
+  }
 
-    // Si faltan 7 días o menos
-    if (daysRemaining <= 7) {
-        return (
-            <Container $expired={false} onClick={() => navigate("/membresias")}>
-                <Content>
-                    <span className="icon">⏳</span>
-                    <span className="text">
-                        Te quedan <strong>{daysRemaining} días</strong> de prueba gratuita. Suscríbete ahora.
-                    </span>
-                </Content>
-            </Container>
-        );
-    }
+  // Si faltan 7 días o menos
+  if (daysRemaining <= 7) {
+    return (
+      <Container $expired={false} onClick={() => navigate("/planes")}>
+        <Content>
+          <span className="icon">⏳</span>
+          <span className="text">
+            Te quedan <strong>{daysRemaining} días</strong> de prueba gratuita. Suscríbete ahora.
+          </span>
+        </Content>
+      </Container>
+    );
+  }
 
-    return null;
+  return null;
 }
 
 const slideDown = keyframes`

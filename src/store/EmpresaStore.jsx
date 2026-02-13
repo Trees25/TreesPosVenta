@@ -7,6 +7,7 @@ export const useEmpresaStore = create((set) => ({
     set({ dataempresa: response });
     return response;
   },
+  set_dataempresa: (p) => set({ dataempresa: p }),
   insertarempresa: async (p) => {
     const response = await InsertarEmpresa(p);
 
