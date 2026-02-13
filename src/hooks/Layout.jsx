@@ -36,11 +36,12 @@ export function Layout({ children }) {
     error: errorUsuarios,
     refetch: refetchUsuarios,
   } = useQuery({
-    queryKey: ["mostrar usuarios"],
-    queryFn: () => mostrarusuarios({ id_auth: id_auth }),
+    queryKey: ["mostrar usuarios", user?.id],
+    queryFn: () => mostrarusuarios({ id_auth: user?.id }),
     refetchOnWindowFocus: false,
-    enabled: !!id_auth,
+    enabled: !!user?.id,
   });
+
 
   const {
     data: dataSucursales,
