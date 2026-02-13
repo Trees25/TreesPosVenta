@@ -16,6 +16,8 @@ const PageNot = lazy(() => import("../components/templates/404").then(module => 
 const Empresa = lazy(() => import("../pages/Empresa").then(module => ({ default: module.Empresa })));
 const ClientesProveedores = lazy(() => import("../pages/ClientesProveedores").then(module => ({ default: module.ClientesProveedores })));
 const Planes = lazy(() => import("../pages/Planes").then(module => ({ default: module.Planes })));
+const LandingPage = lazy(() => import("../pages/LandingPage").then(module => ({ default: module.LandingPage })));
+
 
 const BasicosConfig = lazy(() => import("../components/organismos/EmpresaConfigDesign/BasicosConfig").then(module => ({ default: module.BasicosConfig })));
 const MonedaConfig = lazy(() => import("../components/organismos/EmpresaConfigDesign/MonedaConfig").then(module => ({ default: module.MonedaConfig })));
@@ -182,13 +184,24 @@ export function MyRoutes() {
         <Route
           path="/"
           element={
-            <Layout>
-              <ProtectedRoute accessBy="authenticated">
+            <ProtectedRoute accessBy="authenticated">
+              <Layout>
                 <Home />
-              </ProtectedRoute>
-            </Layout>
+              </Layout>
+            </ProtectedRoute>
           }
         />
+        <Route
+          path="/landing"
+          element={
+            <ProtectedRoute accessBy="non-authenticated">
+              <LandingPage />
+            </ProtectedRoute>
+          }
+        />
+
+
+
         <Route
           path="/dashboard"
           element={

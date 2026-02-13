@@ -122,13 +122,22 @@ export function PlanesTemplate() {
                         {plan.popular && <PopularBadge>Más Popular</PopularBadge>}
                         <PlanName>{plan.nombre}</PlanName>
                         <Price>
+                            {plan.precioOriginal && (
+                                <span className="old-price">
+                                    ${plan.precioOriginal.toLocaleString()}
+                                </span>
+                            )}
                             <span className="currency">$</span>
                             <span className="amount">
                                 {isAnnual ? (plan.precioAnual / 12).toLocaleString() : plan.precioMensual.toLocaleString()}
                             </span>
                             <span className="period">/mes</span>
                         </Price>
+                        <PriceDiscount>25% OFF APLICADO</PriceDiscount>
                         {isAnnual && <YearlyTotal>Facturado anualmente (${plan.precioAnual.toLocaleString()})</YearlyTotal>}
+
+
+
 
                         <Description>{plan.descripcion}</Description>
 
@@ -308,7 +317,15 @@ const Price = styled.div`
     text-align: center;
     margin-bottom: 10px;
     .currency { font-size: 1.5rem; vertical-align: top; margin-right: 5px; }
+    .old-price {
+        text-decoration: line-through;
+        color: ${({ theme }) => theme.colorSubtitle};
+        display: block;
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+    }
     .amount { font-size: 3rem; font-weight: 800; }
+
     .period { color: ${({ theme }) => theme.colorSubtitle}; margin-left: 5px; }
 
     @media (max-width: 768px) {
@@ -316,7 +333,20 @@ const Price = styled.div`
     }
 `;
 
+const PriceDiscount = styled.div`
+    background: #e6fffb;
+    color: #00ca91;
+    padding: 5px 12px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: inline-block;
+    align-self: center;
+`;
+
 const YearlyTotal = styled.p`
+
     text-align: center;
     font-size: 0.85rem;
     color: #00ca91;
