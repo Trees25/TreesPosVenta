@@ -1,48 +1,38 @@
-import styled, { ThemeProvider } from "styled-components";
-import {
-  AuthContextProvider,
-  Dark,
-  GlobalStyles,
-  Light,
-  MyRoutes,
-  useThemeStore,
-  useUsuariosStore,
-} from "./index";
-import { Device } from "./styles/breakpoints";
-import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { ThemeProvider } from "styled-components";
+import { GlobalStyles } from "./styles/GlobalStyles";
+import { useThemeStore } from "./store/ThemeStore";
+import { AppRoutes } from "./routers/routes";
+import { Toaster } from "sonner";
+import { useEffect } from "react";
+import { supabase } from "./supabase";
+import { useAuthStore } from "./store/AuthStore";
 
 function App() {
-  const { setTheme } = useThemeStore();
-  const { datausuarios } = useUsuariosStore();
-  const location = useLocation();
-  const themeStyle = datausuarios?.tema === "light" ? Light : Dark
-  useEffect(() => {
-    if (location.pathname === "/login") {
-      setTheme({
-        tema: "light",
-        style: Light,
-      });
-    } else {
-      if (datausuarios) {
-        const themeStyle = datausuarios?.tema === "light" ? Light : Dark;
-        setTheme({
-          tema: datausuarios?.tema,
-          style: themeStyle,
+    const { themeStyle } = useThemeStore();
+    const { setSession, setUser } = useAuthStore();
+
+    useEffect(() => {
+        // Escuchar cambios de autenticación
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+            setUser(session?.user ?? null);
         });
-      }
-    }
-  }, [datausuarios]);
-  return (
-    <ThemeProvider theme={themeStyle}>
-      <AuthContextProvider>
-        <GlobalStyles />
 
-        <MyRoutes />
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+            setUser(session?.user ?? null);
+        });
 
-      </AuthContextProvider>
-    </ThemeProvider>
-  );
+        return () => subscription.unsubscribe();
+    }, [setSession, setUser]);
+
+    return (
+        <ThemeProvider theme={themeStyle}>
+            <GlobalStyles />
+            <Toaster position="top-right" richColors />
+            <AppRoutes />
+        </ThemeProvider>
+    );
 }
 
 export default App;

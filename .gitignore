@@ -23,3 +23,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Proyecto Innecesario / SQL
+*.sql
+src_legacy/
+temp_dist/
+.firebase/
