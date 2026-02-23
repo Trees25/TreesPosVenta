@@ -7,28 +7,51 @@ import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import { supabase } from "../supabase";
+import { Icon } from "@iconify/react";
 
 export const Categorias = () => {
-    const { user } = useAuthStore();
+    const { user, profile } = useAuthStore();
     const [categorias, setCategorias] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingId, setEditingId] = useState(null);
-    const { register, handleSubmit, reset, setValue } = useForm();
+    const { register, handleSubmit, reset, setValue, watch } = useForm();
+    const selectedIcon = watch("icono");
+
+    const ICONS = [
+        { name: 'Comida', icon: 'mdi:food' },
+        { name: 'Bebidas', icon: 'mdi:bottle-soda' },
+        { name: 'Bebidas Alcohol', icon: 'mdi:glass-wine' },
+        { name: 'Frutas', icon: 'mdi:fruit-grapes' },
+        { name: 'Vegetales', icon: 'mdi:corn' },
+        { name: 'Carnicería', icon: 'mdi:food-steak' },
+        { name: 'Panadería', icon: 'mdi:bread-slice' },
+        { name: 'Lácteos', icon: 'mdi:cow' },
+        { name: 'Congelados', icon: 'mdi:snowflake' },
+        { name: 'Limpieza', icon: 'mdi:broom' },
+        { name: 'Higiene', icon: 'mdi:hand-wash' },
+        { name: 'Mascotas', icon: 'mdi:paw' },
+        { name: 'Hogar', icon: 'mdi:home' },
+        { name: 'Electrónica', icon: 'mdi:television' },
+        { name: 'Juguetes', icon: 'mdi:toy-brick' },
+        { name: 'Ferretería', icon: 'mdi:hammer' },
+        { name: 'Farmacia', icon: 'mdi:pill' },
+        { name: 'Snacks', icon: 'mdi:cookie' },
+        { name: 'Kiosco', icon: 'mdi:candy' }
+    ];
 
     useEffect(() => {
-        if (user) fetchCategorias();
-    }, [user]);
+        if (user && profile) fetchCategorias();
+    }, [user, profile]);
 
     const fetchCategorias = async () => {
         try {
             setLoading(true);
-            const { data: eDatas, error: eError } = await supabase.from("empresa").select("id").eq("id_auth_user", user.id).limit(1);
-            if (eError) throw eError;
-            const empresa = eDatas?.[0];
+            const empresaId = profile?.id_empresa || profile?.empresa?.id;
 
-            if (empresa) {
-                const data = await CategoriaService.listarCategorias(empresa.id);
+            if (empresaId) {
+                console.log("Fetching categories for empresa:", empresaId);
+                const data = await CategoriaService.listarCategorias(empresaId);
                 setCategorias(data || []);
             }
         } catch (error) {
@@ -41,10 +64,13 @@ export const Categorias = () => {
 
     const onSubmit = async (data) => {
         try {
-            const { data: eDatas } = await supabase.from("empresa").select("id").eq("id_auth_user", user.id).limit(1);
-            const empresa = eDatas?.[0];
-            if (!empresa) throw new Error("No se encontró empresa");
-            const payload = { ...data, id_empresa: empresa.id };
+            const empresaId = profile?.empresa?.id;
+            if (!empresaId) throw new Error("No se encontró empresa");
+            const payload = {
+                ...data,
+                id_empresa: empresaId,
+                icono: data.icono || 'mdi:folder'
+            };
 
             if (editingId) {
                 await CategoriaService.actualizarCategoria(editingId, payload);
@@ -109,16 +135,37 @@ export const Categorias = () => {
             <Grid>
                 {loading ? (
                     <p>Cargando...</p>
-                ) : categorias.map((cat) => (
-                    <CatCard key={cat.id} className="glass">
-                        <div className="icon">{cat.icono || "📁"}</div>
-                        <h3>{cat.nombre}</h3>
-                        <Actions>
-                            <button onClick={() => handleEdit(cat)}>Editar</button>
-                            <button className="del" onClick={() => handleDelete(cat.id)}>Eliminar</button>
-                        </Actions>
-                    </CatCard>
-                ))}
+                ) : categorias.length > 0 ? (
+                    categorias.map((cat) => (
+                        <CatCard key={cat.id} className="glass">
+                            <div className="icon">
+                                {(() => {
+                                    const rawIcon = cat.icono || "";
+                                    const iconTrimmed = rawIcon.trim();
+
+                                    if (!iconTrimmed) return "📁";
+
+                                    if (iconTrimmed.includes(":")) {
+                                        return <Icon icon={iconTrimmed} width="40" height="40" />;
+                                    }
+
+                                    return iconTrimmed; // Emoji case
+                                })()}
+                            </div>
+                            <h3>{cat.nombre}</h3>
+                            <Actions>
+                                <button onClick={() => handleEdit(cat)}>Editar</button>
+                                <button className="del" onClick={() => handleDelete(cat.id)}>Eliminar</button>
+                            </Actions>
+                        </CatCard>
+                    ))
+                ) : (
+                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '100px', opacity: 0.5 }}>
+                        <div style={{ fontSize: '50px', marginBottom: '20px' }}>📂</div>
+                        <h3>No se encontraron categorías</h3>
+                        <p>Las categorías configuradas por el administrador aparecerán aquí.</p>
+                    </div>
+                )}
             </Grid>
 
             {showModal && (
@@ -131,8 +178,21 @@ export const Categorias = () => {
                                 <input {...register("nombre", { required: true })} placeholder="Ej: Bebidas" />
                             </InputGroup>
                             <InputGroup>
-                                <label>Icono (Emoji)</label>
-                                <input {...register("icono")} placeholder="Ej: 🥤" />
+                                <label>Seleccionar Icono</label>
+                                <IconGrid>
+                                    {ICONS.map((item) => (
+                                        <IconOption
+                                            key={item.icon}
+                                            type="button"
+                                            $active={selectedIcon === item.icon}
+                                            onClick={() => setValue("icono", item.icon)}
+                                            title={item.name}
+                                        >
+                                            <Icon icon={item.icon} width="24" height="24" />
+                                        </IconOption>
+                                    ))}
+                                </IconGrid>
+                                <input {...register("icono")} type="hidden" />
                             </InputGroup>
                             <ModalActions>
                                 <button type="button" onClick={handleClose}>Cancelar</button>
@@ -275,9 +335,41 @@ const ModalActions = styled.div`
         padding: 10px 20px;
         border-radius: 8px;
         font-weight: 600;
+        cursor: pointer;
         &.primary {
             background: ${({ theme }) => theme.primary};
             color: white;
+            border: none;
         }
+    }
+`;
+
+const IconGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 5px;
+    background: ${({ theme }) => theme.softBg};
+    border-radius: 12px;
+`;
+
+const IconOption = styled.button`
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: ${({ $active, theme }) => $active ? theme.primary : 'transparent'};
+    color: ${({ $active, theme }) => $active ? 'white' : theme.text};
+    border: 1px solid ${({ $active, theme }) => $active ? theme.primary : theme.borderColor}66;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    &:hover {
+        background: ${({ $active, theme }) => $active ? theme.primary : theme.primary + '22'};
+        border-color: ${({ theme }) => theme.primary};
     }
 `;

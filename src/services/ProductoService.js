@@ -4,16 +4,15 @@ export const ProductoService = {
     listarProductos: async (idEmpresa) => {
         const { data, error } = await supabase
             .from("productos")
-            .select("*, categorias(nombre), stock(stock, stock_minimo, id_almacen)")
+            .select("*, categorias(nombre), stock(stock, stock_minimo, id_almacen, almacen(id_sucursal, nombre, sucursales(nombre)))")
             .eq("id_empresa", idEmpresa)
             .order("nombre", { ascending: true });
+
         if (error) throw error;
         return data;
     },
 
     insertarProducto: async (productoData) => {
-        // Nota: El insert de producto debe gatillar la creación de stock inicial
-        // Se recomienda usar el RPC 'insertarproductos' que definimos en bd.sql
         const { data, error } = await supabase.rpc("insertarproductos", {
             p: productoData
         });
@@ -47,5 +46,26 @@ export const ProductoService = {
             .delete()
             .eq("id", id);
         if (error) throw error;
+    },
+
+    importarProductosMasivo: async (productos, idEmpresa) => {
+        const { data, error } = await supabase.rpc("upsert_productos_masivo", {
+            p_productos: productos,
+            p_id_empresa: idEmpresa
+        });
+        if (error) throw error;
+        return data;
+    },
+
+    exportarModeloCSV: () => {
+        const headers = ["nombre", "precio_venta", "precio_compra", "codigo_barras", "codigo_interno", "id_categoria", "sevende_por"];
+        const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "modelo_productos.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 };

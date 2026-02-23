@@ -12,7 +12,7 @@ export const EmpresaService = {
             console.warn("RPC mostrarempresaxiduser falló, usando fallback:", error.message);
             const { data: directData, error: directError } = await supabase
                 .from("empresa")
-                .select("*")
+                .select("*, planes(*)") // Incluimos el join con planes
                 .eq("id_auth_user", userId)
                 .limit(1);
 
@@ -20,7 +20,7 @@ export const EmpresaService = {
             return directData?.[0] || null;
         }
 
-        return data;
+        return Array.isArray(data) ? data[0] : data;
     },
 
     insertEmpresa: async (empresaData) => {
@@ -42,5 +42,14 @@ export const EmpresaService = {
 
         if (error) throw error;
         return data?.[0] || null;
+    },
+
+    getPlanRestrictions: async (idPlan) => {
+        const { data, error } = await supabase
+            .from("restricciones_planes")
+            .select("*")
+            .eq("id_plan", idPlan);
+        if (error) throw error;
+        return data;
     }
 };

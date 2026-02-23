@@ -12,5 +12,36 @@ export const VentaService = {
 
         if (error) throw error;
         return data;
+    },
+
+    listarVentasUsuario: async (idUsuario, fechaIni, fechaFin) => {
+        const { data, error } = await supabase
+            .from("ventas")
+            .select("*, clientes_proveedores(nombres)")
+            .eq("id_usuario", idUsuario)
+            .gte("fecha", `${fechaIni}T00:00:00`)
+            .lte("fecha", `${fechaFin}T23:59:59`)
+            .order("fecha", { ascending: false });
+
+        if (error) throw error;
+        return data || [];
+    },
+
+    obtenerDetalleVenta: async (idVenta) => {
+        const { data: items, error: errorItems } = await supabase
+            .from("detalle_venta")
+            .select("*, productos(nombre)")
+            .eq("id_venta", idVenta);
+
+        if (errorItems) throw errorItems;
+
+        const { data: pagos, error: errorPagos } = await supabase
+            .from("movimientos_caja")
+            .select("*, metodos_pago(nombre)")
+            .eq("id_venta", idVenta);
+
+        if (errorPagos) throw errorPagos;
+
+        return { items, pagos };
     }
 };

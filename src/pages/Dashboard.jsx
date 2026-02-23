@@ -13,7 +13,7 @@ import { toast } from "sonner";
 const COLORS = ['#ff6a00', '#2ecc71', '#3498db', '#9b59b6', '#f1c40f'];
 
 export const Dashboard = () => {
-    const { user } = useAuthStore();
+    const { user, profile } = useAuthStore();
     const [metrics, setMetrics] = useState(null);
     const [chartVentas, setChartVentas] = useState([]);
     const [chartTopProd, setChartTopProd] = useState([]);
@@ -23,29 +23,13 @@ export const Dashboard = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (user) fetchData();
-    }, [user, periodo]);
+        if (profile?.empresa?.id) fetchData();
+    }, [profile, periodo]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
-            const { data: uDatas, error: uError } = await supabase.from("usuarios").select("id_empresa").eq("id_auth", user.id).limit(1);
-
-            if (uError) throw uError;
-            const usuario = uDatas?.[0];
-
-            if (!usuario) {
-                toast.error("No se encontró perfil de usuario. Registra tu empresa primero.");
-                setLoading(false);
-                return;
-            }
-
-            const idEmpresa = usuario.id_empresa;
-            if (!idEmpresa) {
-                toast.error("Usuario no vinculado a ninguna empresa.");
-                setLoading(false);
-                return;
-            }
+            const idEmpresa = profile.empresa.id;
 
             const fechaFin = new Date().toISOString().split('T')[0];
             const fechaInicio = new Date(Date.now() - periodo * 24 * 60 * 60 * 1000).toISOString().split('T')[0];

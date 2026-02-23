@@ -20,6 +20,7 @@ export const CajaService = {
             .insert({
                 id_usuario: cajaData.id_usuario,
                 id_caja: cajaData.id_caja,
+                id_empresa: cajaData.id_empresa,
                 monto_apertura: cajaData.monto_inicial || 0,
                 fecha_apertura: new Date().toISOString(),
                 estado: 0

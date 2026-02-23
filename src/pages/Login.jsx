@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Device } from "../styles/breakpoints";
 import { useState } from "react";
 import { useAuthStore } from "../store/AuthStore";
+import { Link } from "react-router-dom";
 
 export const Login = () => {
   const [loading, setLoading] = useState(false);
@@ -21,17 +22,48 @@ export const Login = () => {
 
   const onSubmit = async (data) => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
+    try {
+      // 1. Intento de sesión
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
 
-    if (error) {
-      toast.error("Error al iniciar sesión: " + error.message);
-    } else {
-      toast.success("¡Bienvenido de nuevo!");
+      if (authError) {
+        console.error("Error Auth:", authError);
+        toast.error("Credenciales incorrectas: " + authError.message);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Recuperar sesión
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        toast.error("Error al recuperar la sesión activa.");
+        setLoading(false);
+        return;
+      }
+
+      // 3. Obtener Perfil
+      const { data: profile, error: profError } = await supabase.rpc("obtener_perfil_usuario", {
+        p_auth_id: session.user.id
+      });
+
+      if (profError) {
+        console.error("Error Perfil:", profError);
+        toast.error("Error al cargar perfil tras login: " + profError.message);
+        setLoading(false);
+        return;
+      }
+
+      toast.success(`¡Hola de nuevo, ${profile?.nombres || 'Bienvenido'}!`);
+    } catch (error) {
+      console.error("Error inesperado en login:", error);
+      toast.error("Error crítico de conexión o del sistema.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -39,42 +71,45 @@ export const Login = () => {
       <GlassCard className="glass animate-up">
         <Header>
           <h1>Trees PosVenta</h1>
-          <p>Potenciando tu negocio con elegancia</p>
+          <p>Acceso inteligente para tu negocio</p>
         </Header>
+
         <Form onSubmit={handleSubmit(onSubmit)}>
-          <InputGroup>
-            <label>Correo Electrónico</label>
-            <input
-              type="email"
-              placeholder="admin@ejemplo.com"
-              {...register("email", { required: "El correo es obligatorio" })}
-            />
-            {errors.email && <ErrorMessage>{errors.email.message}</ErrorMessage>}
-          </InputGroup>
-          <InputGroup>
-            <label>Contraseña</label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              {...register("password", { required: "La contraseña es obligatoria" })}
-            />
-            {errors.password && <ErrorMessage>{errors.password.message}</ErrorMessage>}
-          </InputGroup>
-          <SubmitButton type="submit" disabled={loading}>
-            {loading ? "Iniciando..." : "Entrar al Sistema"}
-          </SubmitButton>
+          <div className="animate-in">
+            <InputGroup>
+              <label>Correo Electrónico</label>
+              <input
+                type="email"
+                placeholder="tu@email.com"
+                autoFocus
+                {...register("email", { required: "El correo es obligatorio" })}
+              />
+              {errors.email && <ErrorMessage>{errors.email.message}</ErrorMessage>}
+            </InputGroup>
 
-          <Divider>
-            <span>O entrar con</span>
-          </Divider>
+            <InputGroup style={{ marginTop: '15px' }}>
+              <label>Contraseña</label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                {...register("password", { required: "La contraseña es obligatoria" })}
+              />
+              {errors.password && <ErrorMessage>{errors.password.message}</ErrorMessage>}
+            </InputGroup>
 
-          <GoogleButton type="button" onClick={loginWithGoogle}>
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
-            Continuar con Google
-          </GoogleButton>
+            <SubmitButton type="submit" disabled={loading}>
+              {loading ? "Iniciando sesión..." : "ENTRAR AL SISTEMA 🚀"}
+            </SubmitButton>
+
+            <Divider><span>O entrar con</span></Divider>
+            <GoogleButton type="button" onClick={loginWithGoogle}>
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+              Continuar con Google
+            </GoogleButton>
+          </div>
         </Form>
         <Footer>
-          <span>¿No tienes cuenta? <a href="#">Contactar soporte</a></span>
+          <span>¿No tienes cuenta? <Link to="/registro">Crea tu empresa</Link></span>
         </Footer>
       </GlassCard>
     </Container>
@@ -88,6 +123,10 @@ const Container = styled.div`
   align-items: center;
   background: linear-gradient(135deg, #0b0e14 0%, #1a1e26 100%);
   padding: 20px;
+
+  .animate-in {
+    animation: fadeIn 0.4s ease-out;
+  }
 `;
 
 const GlassCard = styled.div`

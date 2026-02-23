@@ -5,7 +5,7 @@ export const SuscripcionService = {
         const { data, error } = await supabase
             .from("planes")
             .select("*")
-            .order("precio", { ascending: true });
+            .order("monto", { ascending: true });
         if (error) throw error;
         return data;
     },
@@ -15,7 +15,8 @@ export const SuscripcionService = {
             .from("suscripciones")
             .select("*, planes(*)")
             .eq("id_empresa", idEmpresa)
-            .eq("estado", "activo")
+            .in("estado", ["activo", "trial", "vencido"])
+            .order("fecha_fin", { ascending: false })
             .limit(1);
         if (error) throw error;
         return data?.[0] || null;

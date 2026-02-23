@@ -8,11 +8,14 @@ import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
 import { supabase } from "../supabase";
+import { SucursalService } from "../services/SucursalService";
+import { PersonalService } from "../services/PersonalService";
 
 export const Productos = () => {
-    const { user } = useAuthStore();
+    const { user, profile } = useAuthStore();
     const [productos, setProductos] = useState([]);
     const [categorias, setCategorias] = useState([]);
+    const [sucursales, setSucursales] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -20,23 +23,23 @@ export const Productos = () => {
     const { register, handleSubmit, reset, setValue } = useForm();
 
     useEffect(() => {
-        if (user) fetchData();
-    }, [user]);
+        if (user && profile) fetchData();
+    }, [user, profile]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
-            const { data: eDatas, error: eError } = await supabase.from("empresa").select("id").eq("id_auth_user", user.id).limit(1);
-            if (eError) throw eError;
-            const empresa = eDatas?.[0];
+            const empresaId = profile?.empresa?.id;
 
-            if (empresa) {
-                const [prodList, catList] = await Promise.all([
-                    ProductoService.listarProductos(empresa.id),
-                    CategoriaService.listarCategorias(empresa.id)
+            if (empresaId) {
+                const [prodList, catList, sucList] = await Promise.all([
+                    ProductoService.listarProductos(empresaId),
+                    CategoriaService.listarCategorias(empresaId),
+                    SucursalService.getSucursalesByEmpresa(empresaId)
                 ]);
                 setProductos(prodList || []);
                 setCategorias(catList || []);
+                setSucursales(sucList || []);
             }
         } catch (error) {
             console.error("Error loading products:", error);
@@ -48,25 +51,42 @@ export const Productos = () => {
 
     const onSubmit = async (data) => {
         try {
-            const [{ data: eDatas }, { data: uDatas }] = await Promise.all([
-                supabase.from("empresa").select("id").eq("id_auth_user", user.id).limit(1),
-                supabase.from("usuarios").select("id").eq("id_auth", user.id).limit(1)
-            ]);
+            const empresaId = profile?.empresa?.id;
+            const usuarioId = profile?.id;
 
-            const empresa = eDatas?.[0];
-            const usuario = uDatas?.[0];
-
-            if (!empresa || !usuario) throw new Error("No se encontró empresa o usuario");
+            if (!empresaId || !usuarioId) throw new Error("No se encontró empresa o usuario");
 
             const payload = {
                 ...data,
-                id_empresa: empresa.id,
-                id_usuario: usuario.id,
+                id_empresa: empresaId,
+                id_usuario: usuarioId,
+                id_sucursal: data.id_sucursal || profile.id_sucursal,
                 stock_inicial: data.stock_inicial || 0
             };
 
             if (editingId) {
-                await ProductoService.actualizarProducto(editingId, payload);
+                // Seleccionar explícitamente solo los campos que pertenecen a la tabla productos
+                const updateData = {
+                    nombre: data.nombre,
+                    precio_venta: parseFloat(data.precio_venta) || 0,
+                    precio_compra: parseFloat(data.precio_compra) || 0,
+                    id_categoria: data.id_categoria ? parseInt(data.id_categoria) : null,
+                    codigo_barras: data.codigo_barras,
+                    codigo_interno: data.codigo_interno,
+                    sevende_por: data.sevende_por,
+                    maneja_inventarios: data.maneja_inventarios,
+                    fecha_vencimiento: data.fecha_vencimiento || null,
+                    dias_alerta: parseInt(data.dias_alerta) || 7,
+                    id_empresa: empresaId
+                };
+
+                // id_sucursal solo se actualiza si es un valor válido
+                if (data.id_sucursal && data.id_sucursal !== 'all') {
+                    updateData.id_sucursal = parseInt(data.id_sucursal);
+                }
+
+                console.log("Actualizando producto:", editingId, updateData);
+                await ProductoService.actualizarProducto(editingId, updateData);
                 toast.success("Producto actualizado exitosamente");
             } else {
                 await ProductoService.insertarProducto(payload);
@@ -77,7 +97,7 @@ export const Productos = () => {
             fetchData();
         } catch (error) {
             console.error("Error saving product:", error);
-            toast.error("Error al guardar producto");
+            toast.error("Error al guardar producto: " + error.message);
         }
     };
 
@@ -94,6 +114,7 @@ export const Productos = () => {
         setValue("stock_minimo", prod.stock?.[0]?.stock_minimo);
         setValue("dias_alerta", prod.dias_alerta);
         setValue("maneja_inventarios", prod.maneja_inventarios);
+        setValue("id_sucursal", prod.stock?.[0]?.almacen?.id_sucursal || profile.id_sucursal);
         setShowModal(true);
     };
 
@@ -135,6 +156,44 @@ export const Productos = () => {
         toast.info("Código generado: " + result);
     };
 
+    const handleImportCSV = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const text = event.target.result;
+                const lines = text.split("\n");
+                const headers = lines[0].split(",");
+                const data = lines.slice(1).filter(line => line.trim() !== "").map(line => {
+                    const values = line.split(",");
+                    const obj = {};
+                    headers.forEach((header, i) => {
+                        obj[header.trim()] = values[i]?.trim();
+                    });
+                    return obj;
+                });
+
+                if (data.length === 0) {
+                    toast.error("El CSV está vacío");
+                    return;
+                }
+
+                const empresaId = profile?.empresa?.id;
+                if (empresaId) {
+                    const result = await ProductoService.importarProductosMasivo(data, empresaId);
+                    toast.success(`Importación exitosa: ${result.insertados} insertados, ${result.actualizados} actualizados.`);
+                    fetchData();
+                }
+            } catch (error) {
+                console.error("Error al importar CSV:", error);
+                toast.error("Error al procesar el archivo CSV");
+            }
+        };
+        reader.readAsText(file);
+    };
+
     const filteredProductos = productos.filter(p =>
         p.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.codigo_barras?.includes(searchTerm) ||
@@ -161,6 +220,19 @@ export const Productos = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </SearchBox>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <SecondaryBtn onClick={ProductoService.exportarModeloCSV}>📥 Modelo CSV</SecondaryBtn>
+                        <label htmlFor="csv-upload">
+                            <SecondaryBtn as="span">📤 Importar CSV</SecondaryBtn>
+                        </label>
+                        <input
+                            id="csv-upload"
+                            type="file"
+                            accept=".csv"
+                            style={{ display: 'none' }}
+                            onChange={handleImportCSV}
+                        />
+                    </div>
                     <AddBtn onClick={() => setShowModal(true)}>+ Nuevo Producto</AddBtn>
                 </div>
             </Header>
@@ -191,9 +263,31 @@ export const Productos = () => {
                                 <td>{prod.categorias?.nombre || "General"}</td>
                                 <td><PriceText>${prod.precio_venta}</PriceText></td>
                                 <td>
-                                    <StockBadge $low={prod.stock?.[0]?.stock <= prod.stock?.[0]?.stock_minimo}>
-                                        {prod.stock?.[0]?.stock || 0} {prod.sevende_por === 'GRANEL' ? 'kg' : 'ud'}
-                                    </StockBadge>
+                                    {(() => {
+                                        const branchStock = prod.stock?.find(s => s.almacen?.id_sucursal === profile?.id_sucursal);
+                                        const stockQty = branchStock?.stock || 0;
+                                        const minQty = branchStock?.stock_minimo || 0;
+
+                                        const totalStock = prod.stock?.reduce((acc, s) => acc + (s.stock || 0), 0) || 0;
+                                        // Corregido: navegar por almacen y luego sucursal para obtener el nombre real de la sucursal
+                                        const branchesInfo = prod.stock?.map(s => `${s.almacen?.sucursales?.nombre || 'Sede'}: ${s.stock}`).join('\n') || 'Sin stock';
+
+                                        return (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                <StockBadge
+                                                    $low={stockQty <= minQty}
+                                                    title={profile?.roles?.nombre === 'admin' ? `Desglose:\n${branchesInfo}` : `Mínimo: ${minQty}`}
+                                                >
+                                                    {stockQty} {prod.sevende_por === 'GRANEL' ? 'kg' : 'ud'}
+                                                </StockBadge>
+                                                {profile?.roles?.nombre === 'admin' && (
+                                                    <span style={{ fontSize: '10px', color: '#888', fontWeight: 'bold' }}>
+                                                        Total: {totalStock}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
                                 </td>
                                 <td>
                                     {prod.fecha_vencimiento ? (
@@ -270,15 +364,39 @@ export const Productos = () => {
                                 </InputGroup>
                                 <InputGroup>
                                     <label>Stock Inicial</label>
-                                    <input type="number" {...register("stock_inicial")} />
+                                    <input
+                                        type="number"
+                                        {...register("stock_inicial")}
+                                        disabled={editingId}
+                                        title={editingId ? "El stock se aumenta vía movimientos de inventario" : ""}
+                                        style={editingId ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
+                                    />
                                 </InputGroup>
                                 <InputGroup>
                                     <label>Stock Mínimo</label>
-                                    <input type="number" {...register("stock_minimo")} />
+                                    <input
+                                        type="number"
+                                        {...register("stock_minimo")}
+                                        disabled={editingId}
+                                        style={editingId ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
+                                    />
                                 </InputGroup>
                                 <InputGroup>
                                     <label>Aviso Vencimiento (Días)</label>
                                     <input type="number" {...register("dias_alerta")} defaultValue={7} />
+                                </InputGroup>
+                                <InputGroup>
+                                    <label>Sucursal Destino</label>
+                                    <select {...register("id_sucursal")}>
+                                        {sucursales.map(s => (
+                                            <option key={s.id} value={s.id}>
+                                                {s.nombre}
+                                            </option>
+                                        ))}
+                                        {profile?.roles?.nombre === 'admin' && (
+                                            <option value="all">Todas (Dividir Stock)</option>
+                                        )}
+                                    </select>
                                 </InputGroup>
                                 <InputGroup style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
                                     <input type="checkbox" {...register("maneja_inventarios")} defaultChecked />
@@ -287,7 +405,9 @@ export const Productos = () => {
                             </FormGrid>
                             <ModalActions>
                                 <button type="button" onClick={handleClose}>Cancelar</button>
-                                <button type="submit" className="primary">Crear Producto</button>
+                                <button type="submit" className="primary">
+                                    {editingId ? "Guardar Cambios" : "Crear Producto"}
+                                </button>
                             </ModalActions>
                         </form>
                     </Modal>
@@ -297,18 +417,27 @@ export const Productos = () => {
     );
 };
 
-// ... Estilos avanzados (Container, Header, Table, Modal, etc.)
 const Container = styled.div` padding: 40px 5%; `;
 const HomeBtn = styled(Link)` background: ${({ theme }) => theme.softBg}; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid ${({ theme }) => theme.borderColor}44; text-decoration: none; font-size: 20px; transition: all 0.2s; &:hover { background: ${({ theme }) => theme.primary}22; border-color: ${({ theme }) => theme.primary}; transform: scale(1.05); } `;
 const Header = styled.div` display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; gap: 20px; @media (max-width: 768px) { flex-direction: column; align-items: flex-start; } .title-area { h1 { margin: 0; font-size: 28px; font-weight: 900; } p { margin: 5px 0 0; color: ${({ theme }) => theme.text}66; font-size: 14px; font-weight: 600; } } .actions-area { display: flex; gap: 15px; flex: 1; justify-content: flex-end; width: 100%; } `;
 const SearchBox = styled.div` display: flex; align-items: center; gap: 12px; padding: 0 20px; background: ${({ theme }) => theme.softBg}; border: 1px solid ${({ theme }) => theme.borderColor}44; border-radius: 16px; flex: 1; max-width: 500px; height: 50px; span { font-size: 18px; filter: grayscale(1); } input { background: transparent; border: none; color: ${({ theme }) => theme.text}; font-size: 14px; width: 100%; font-weight: 600; &:focus { outline: none; } &::placeholder { color: ${({ theme }) => theme.text}44; } } `;
 const AddBtn = styled.button` background: ${({ theme }) => theme.primary}; color: white; padding: 0 30px; border-radius: 16px; font-weight: 800; font-size: 14px; height: 50px; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 10px 20px ${({ theme }) => theme.primary}33; &:hover { transform: translateY(-2px); box-shadow: 0 15px 30px ${({ theme }) => theme.primary}55; } `;
+const SecondaryBtn = styled.button` background: ${({ theme }) => theme.softBg}; color: ${({ theme }) => theme.text}; padding: 0 20px; border-radius: 16px; font-weight: 800; font-size: 13px; height: 50px; border: 1px solid ${({ theme }) => theme.borderColor}44; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; &:hover { background: ${({ theme }) => theme.primary}11; border-color: ${({ theme }) => theme.primary}; } `;
 const TableContainer = styled.div` background: ${({ theme }) => theme.cardBg}; border: 1px solid ${({ theme }) => theme.borderColor}33; border-radius: 24px; overflow: hidden; &.blur { backdrop-filter: blur(20px); } `;
 const Table = styled.table` width: 100%; border-collapse: collapse; th { text-align: left; padding: 22px 25px; background: ${({ theme }) => theme.softBg}44; font-size: 12px; color: ${({ theme }) => theme.text}66; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; } td { padding: 22px 25px; border-bottom: 1px solid ${({ theme }) => theme.borderColor}11; } tr.animate-fade { animation: fadeIn 0.3s ease-out; } @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } } `;
 const ProdInfo = styled.div` .name { font-weight: 700; color: ${({ theme }) => theme.text}; } .sku { font-size: 11px; color: ${({ theme }) => theme.primary}; font-family: monospace; font-weight: 700; text-transform: uppercase; } `;
-const CodeText = styled.div` font-size: 11px; color: ${({ theme }) => theme.text}88; font-family: 'Libre Barcode 39', cursive, monospace; `;
-const PriceText = styled.div` font-weight: 800; color: ${({ theme }) => theme.primary}; fontSize: 16px; `;
-const StockBadge = styled.span` background: ${({ $low, theme }) => $low ? "#ff475722" : "#2ed57322"}; color: ${({ $low, theme }) => $low ? "#ff4757" : "#2ed573"}; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 12px; border: 1px solid ${({ $low, theme }) => $low ? "#ff475744" : "#2ed57344"}; `;
+const CodeText = styled.div` font-size: 11px; color: ${({ theme }) => theme.text}88; font-family: monospace; `;
+const PriceText = styled.div` font-weight: 800; color: ${({ theme }) => theme.primary}; font-size: 16px; `;
+const StockBadge = styled.span`
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 800;
+    background: ${({ $low }) => $low ? 'rgba(255, 71, 87, 0.15)' : 'rgba(46, 213, 115, 0.15)'};
+    color: ${({ $low }) => $low ? '#ff4757' : '#2ed573'};
+    border: 1px solid ${({ $low }) => $low ? 'rgba(255, 71, 87, 0.2)' : 'rgba(46, 213, 115, 0.2)'};
+    cursor: help;
+`;
 const ExpiryBadge = styled.span` background: ${({ $days }) => $days < 0 ? "#ff475722" : $days < 7 ? "#ffa50222" : "#2ed57311"}; color: ${({ $days }) => $days < 0 ? "#ff4757" : $days < 7 ? "#ffa502" : "#2ed57388"}; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 11px; `;
 const ActionIcons = styled.div` font-size: 18px; cursor: pointer; display: flex; gap: 10px; `;
 const ModalOverlay = styled.div` position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; `;

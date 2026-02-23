@@ -6,13 +6,15 @@ import { CajaService } from "../services/CajaService";
 import { useAuthStore } from "../store/AuthStore";
 import { useVentaStore } from "../store/VentaStore";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Icon } from "@iconify/react";
 import Swal from "sweetalert2";
 import { supabase } from "../supabase";
 import { ModalCobro } from "../components/ModalCobro";
 
 export const POS = () => {
-    const { user } = useAuthStore();
+    const { user, profile } = useAuthStore();
+    const navigate = useNavigate();
     const {
         carrito, agregarProducto, quitarProducto, actualizarCantidad,
         getTotal, limpiarCarrito, idCaja, setCaja
@@ -28,6 +30,45 @@ export const POS = () => {
     useEffect(() => {
         if (user) checkCajaAndFetch();
     }, [user]);
+
+    // Lector de Código de Barras (HID Scanner)
+    useEffect(() => {
+        let buffer = "";
+        let lastKeyTime = Date.now();
+
+        const handleKeyDown = (e) => {
+            const currentTime = Date.now();
+
+            // Si el tiempo entre teclas es muy corto (< 50ms), asumimos que es un escáner
+            if (currentTime - lastKeyTime > 50) {
+                buffer = "";
+            }
+
+            lastKeyTime = currentTime;
+
+            if (e.key === "Enter") {
+                if (buffer.length > 2) {
+                    const product = productos.find(p =>
+                        p.codigo_barras === buffer ||
+                        p.codigo_interno === buffer
+                    );
+
+                    if (product) {
+                        agregarProducto(product);
+                        toast.success(`Scaneado: ${product.nombre}`);
+                    } else {
+                        toast.error(`Código no encontrado: ${buffer}`);
+                    }
+                    buffer = "";
+                }
+            } else if (e.key.length === 1) {
+                buffer += e.key;
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [productos]); // Dependencia de productos para poder buscar
 
     const checkCajaAndFetch = async () => {
         try {
@@ -70,6 +111,7 @@ export const POS = () => {
                 cajaAbierta = await CajaService.abrirCaja({
                     id_usuario: usuarioData.id,
                     id_caja: bData?.id || 1,
+                    id_empresa: empId,
                     monto_inicial: parseFloat(monto) || 0
                 });
             }
@@ -81,6 +123,30 @@ export const POS = () => {
             toast.error("Error al inicializar POS: " + error.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleCerrarCaja = async () => {
+        const { isConfirmed } = await Swal.fire({
+            title: "¿Cerrar caja?",
+            text: "Se finalizará tu turno de venta actual.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#ff6a00",
+            confirmButtonText: "Sí, cerrar",
+            cancelButtonText: "No todavía"
+        });
+
+        if (isConfirmed) {
+            try {
+                await CajaService.cerrarCaja(idCaja, {
+                    monto_cierre: 0 // Simplificado por ahora
+                });
+                toast.success("Caja cerrada correctamente");
+                navigate("/");
+            } catch (error) {
+                toast.error("Error al cerrar caja: " + error.message);
+            }
         }
     };
 
@@ -106,8 +172,11 @@ export const POS = () => {
     return (
         <POSContainer>
             <ProductsSection className="animate-fade">
-                <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px' }}>
                     <HomeBtn to="/">🏠</HomeBtn>
+                    <CerrarCajaBtn onClick={handleCerrarCaja}>
+                        <Icon icon="mdi:lock-outline" /> Cerrar Caja
+                    </CerrarCajaBtn>
                     <SearchBox style={{ marginBottom: 0, flex: 1 }}>
                         <input
                             type="text"
@@ -182,6 +251,7 @@ export const POS = () => {
 
 const POSContainer = styled.div` display: grid; grid-template-columns: 1fr 400px; height: calc(100vh - 80px); gap: 20px; padding: 20px; `;
 const HomeBtn = styled(Link)` background: ${({ theme }) => theme.cardBg}; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid ${({ theme }) => theme.borderColor}44; text-decoration: none; font-size: 24px; transition: all 0.2s; &:hover { background: ${({ theme }) => theme.primary}22; border-color: ${({ theme }) => theme.primary}; transform: scale(1.05); } `;
+const CerrarCajaBtn = styled.button` background: #ff5e5711; color: #ff5e57; border: 1px solid #ff5e5733; padding: 0 20px; height: 55px; border-radius: 12px; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; &:hover { background: #ff5e57; color: white; transform: translateY(-2px); box-shadow: 0 8px 20px #ff5e5744; } `;
 const ProductsSection = styled.div` overflow-y: auto; padding-right: 10px; `;
 const SearchBox = styled.div` margin-bottom: 20px; input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid ${({ theme }) => theme.borderColor}; background: ${({ theme }) => theme.cardBg}; color: ${({ theme }) => theme.text}; font-size: 16px; } `;
 const ProductsGrid = styled.div` display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; `;

@@ -23,5 +23,17 @@ export const StockService = {
 
         if (error) throw error;
         return data;
+    },
+
+    listarMovimientos: async (idProducto) => {
+        const { data, error } = await supabase
+            .from("movimientos_stock")
+            .select("*, usuarios(nombre), almacen(nombre)")
+            .eq("id_producto", idProducto)
+            .order("fecha", { ascending: false })
+            .limit(50);
+
+        if (error) throw error;
+        return data;
     }
 };

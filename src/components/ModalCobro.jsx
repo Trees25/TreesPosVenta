@@ -150,17 +150,24 @@ export const ModalCobro = ({ onVentaExitosa, onClose, idEmpresa, idUsuario, idCa
                     <Section>
                         <Label><Icon icon="mdi:cash-multiple" /> Medios de Pago</Label>
                         <PaymentsGrid>
-                            {metodosPago.map(m => (
-                                <PaymentItem key={m.id}>
-                                    <span>{m.icono ? <Icon icon={m.icono} /> : <Icon icon="mdi:payment" />} {m.nombre}</span>
-                                    <input
-                                        type="number"
-                                        value={pagos[m.id] || ""}
-                                        onChange={(e) => handlePagoChange(m.id, e.target.value)}
-                                        placeholder="0.00"
-                                    />
-                                </PaymentItem>
-                            ))}
+                            {metodosPago.length > 0 ? (
+                                metodosPago.map(m => (
+                                    <PaymentItem key={m.id}>
+                                        <span>{m.icono ? <Icon icon={m.icono} /> : <Icon icon="mdi:payment" />} {m.nombre}</span>
+                                        <input
+                                            type="number"
+                                            value={pagos[m.id] || ""}
+                                            onChange={(e) => handlePagoChange(m.id, e.target.value)}
+                                            placeholder="0.00"
+                                        />
+                                    </PaymentItem>
+                                ))
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '20px', background: 'rgba(255,106,0,0.1)', color: '#ff6a00', borderRadius: '12px', fontSize: '13px', fontWeight: 'bold' }}>
+                                    ⚠️ No hay medios de pago configurados. <br />
+                                    Consulte con su administrador para activarlos.
+                                </div>
+                            )}
                         </PaymentsGrid>
                     </Section>
 

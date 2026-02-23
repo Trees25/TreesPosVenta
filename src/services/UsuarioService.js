@@ -2,14 +2,12 @@ import { supabase } from "../supabase";
 
 export const UsuarioService = {
     getCurrentUser: async (authId) => {
-        const { data, error } = await supabase
-            .from("usuarios")
-            .select("*, roles(*), empresa(*)")
-            .eq("id_auth", authId)
-            .limit(1);
+        const { data, error } = await supabase.rpc("obtener_perfil_usuario", {
+            p_auth_id: authId
+        });
 
         if (error) throw error;
-        return data?.[0] || null;
+        return data || null;
     },
 
     insertUsuario: async (userData) => {

@@ -10,16 +10,63 @@ const Productos = lazy(() => import("../pages/Productos").then(module => ({ defa
 const POS = lazy(() => import("../pages/POS").then(module => ({ default: module.POS })));
 const Dashboard = lazy(() => import("../pages/Dashboard").then(module => ({ default: module.Dashboard })));
 const Planes = lazy(() => import("../pages/Planes").then(module => ({ default: module.Planes })));
+const Registro = lazy(() => import("../pages/Registro").then(module => ({ default: module.Registro })));
+const Sucursales = lazy(() => import("../pages/Sucursales").then(module => ({ default: module.Sucursales })));
+const Terceros = lazy(() => import("../pages/Terceros").then(module => ({ default: module.Terceros })));
+const GestionUsuarios = lazy(() => import("../pages/GestionUsuarios").then(module => ({ default: module.GestionUsuarios })));
+const ReporteVentas = lazy(() => import("../pages/ReporteVentas").then(module => ({ default: module.ReporteVentas })));
+const AjusteStock = lazy(() => import("../pages/AjusteStock").then(module => ({ default: module.AjusteStock })));
+import { NotFound } from "../pages/NotFound";
 
 export function AppRoutes() {
     return (
         <Suspense fallback={<div>Cargando...</div>}>
             <Routes>
                 <Route
+                    path="/personal"
+                    element={
+                        <ProtectedRoute accessBy="authenticated" module="Personal">
+                            <GestionUsuarios />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/sucursales"
+                    element={
+                        <ProtectedRoute accessBy="authenticated" module="Sucursales">
+                            <Sucursales />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/clientes"
+                    element={
+                        <ProtectedRoute accessBy="authenticated" module="Clientes">
+                            <Terceros tipo="cliente" />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/proveedores"
+                    element={
+                        <ProtectedRoute accessBy="authenticated" module="Proveedores">
+                            <Terceros tipo="proveedor" />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
                     path="/login"
                     element={
                         <ProtectedRoute accessBy="non-authenticated">
                             <Login />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/registro"
+                    element={
+                        <ProtectedRoute accessBy="non-authenticated">
+                            <Registro />
                         </ProtectedRoute>
                     }
                 />
@@ -42,7 +89,7 @@ export function AppRoutes() {
                 <Route
                     path="/dashboard"
                     element={
-                        <ProtectedRoute accessBy="authenticated">
+                        <ProtectedRoute accessBy="authenticated" module="Dashboard">
                             <Dashboard />
                         </ProtectedRoute>
                     }
@@ -58,15 +105,23 @@ export function AppRoutes() {
                 <Route
                     path="/pos"
                     element={
-                        <ProtectedRoute accessBy="authenticated">
+                        <ProtectedRoute accessBy="authenticated" module="Ventas">
                             <POS />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/reporte-ventas"
+                    element={
+                        <ProtectedRoute accessBy="authenticated" module="Ventas">
+                            <ReporteVentas />
                         </ProtectedRoute>
                     }
                 />
                 <Route
                     path="/inventario/categorias"
                     element={
-                        <ProtectedRoute accessBy="authenticated">
+                        <ProtectedRoute accessBy="authenticated" module="Inventario">
                             <Categorias />
                         </ProtectedRoute>
                     }
@@ -74,12 +129,20 @@ export function AppRoutes() {
                 <Route
                     path="/inventario/productos"
                     element={
-                        <ProtectedRoute accessBy="authenticated">
+                        <ProtectedRoute accessBy="authenticated" module="Inventario">
                             <Productos />
                         </ProtectedRoute>
                     }
                 />
-                <Route path="*" element={<div>Página no encontrada</div>} />
+                <Route
+                    path="/inventario/ajuste"
+                    element={
+                        <ProtectedRoute accessBy="authenticated" module="Inventario">
+                            <AjusteStock />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route path="*" element={<NotFound />} />
             </Routes>
         </Suspense>
     );

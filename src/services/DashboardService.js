@@ -18,8 +18,8 @@ export const DashboardService = {
 
     obtenerVentasPorDia: async (idEmpresa, dias = 7) => {
         const { data, error } = await supabase.rpc("rpc_ventas_historico", {
-            p_dias: dias,
-            p_id_empresa: idEmpresa
+            p_id_empresa: idEmpresa,
+            p_dias: dias
         });
 
         if (error) throw error;
