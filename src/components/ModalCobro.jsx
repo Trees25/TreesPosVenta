@@ -5,8 +5,12 @@ import { VentaService } from "../services/VentaService";
 import { supabase } from "../supabase";
 import { toast } from "sonner";
 import { Icon } from "@iconify/react";
+import { DocumentoService } from "../services/DocumentoService";
+import { useAuthStore } from "../store/AuthStore";
+import { ComprobantePrint } from "./ComprobantePrint";
 
 export const ModalCobro = ({ onVentaExitosa, onClose, idEmpresa, idUsuario, idCaja, idAlmacen }) => {
+    const { profile } = useAuthStore();
     const { getTotal, getNeto, getDescuentoCalculado, descuentoValor, descuentoTipo, setDescuento, cliente, setCliente, carrito, limpiarCarrito } = useVentaStore();
 
     const [metodosPago, setMetodosPago] = useState([]);
@@ -14,10 +18,36 @@ export const ModalCobro = ({ onVentaExitosa, onClose, idEmpresa, idUsuario, idCa
     const [loading, setLoading] = useState(false);
     const [busquedaCliente, setBusquedaCliente] = useState("");
     const [clientesEncontrados, setClientesEncontrados] = useState([]);
+    const [tiposComprobantes, setTiposComprobantes] = useState([]);
+    const [idTipoCompSelected, setIdTipoCompSelected] = useState(null);
+    const [saleSuccess, setSaleSuccess] = useState(null); // { venta, detalles, tipoComprobante, plantilla }
 
     useEffect(() => {
-        fetchMetodosPago();
+        fetchInitialData();
     }, []);
+
+    const fetchInitialData = async () => {
+        setLoading(true);
+        try {
+            await Promise.all([
+                fetchMetodosPago(),
+                fetchTiposComprobantes()
+            ]);
+        } catch (error) {
+            toast.error("Error al cargar datos: " + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchTiposComprobantes = async () => {
+        const data = await DocumentoService.listarTiposComprobantes();
+        if (data) {
+            setTiposComprobantes(data);
+            const ticket = data.find(t => t.nombre === 'Ticket');
+            if (ticket) setIdTipoCompSelected(ticket.id);
+        }
+    };
 
     const fetchMetodosPago = async () => {
         const { data } = await supabase.from("metodos_pago").select("*").eq("id_empresa", idEmpresa);
@@ -70,6 +100,8 @@ export const ModalCobro = ({ onVentaExitosa, onClose, idEmpresa, idUsuario, idCa
                     id_caja: idCaja,
                     id_empresa: idEmpresa,
                     id_almacen: idAlmacen,
+                    id_sucursal: profile?.id_sucursal,
+                    id_tipo_comprobante: idTipoCompSelected,
                     tipo_pago: Object.keys(pagos).length > 1 ? "mixto" : metodosPago.find(m => m.id == Object.keys(pagos)[0])?.nombre.toLowerCase()
                 },
                 detalles: carrito.map(item => ({
@@ -88,16 +120,69 @@ export const ModalCobro = ({ onVentaExitosa, onClose, idEmpresa, idUsuario, idCa
                     }))
             };
 
-            await VentaService.procesarVenta(ventaData);
+            const idVenta = await VentaService.procesarVenta(ventaData);
             toast.success("Venta finalizada correctamente");
+
+            // Preparar para impresión
+            const [ventaFull, plantillas] = await Promise.all([
+                supabase.from("ventas").select("*, clientes_proveedores(nombres)").eq("id", idVenta).single(),
+                DocumentoService.listarPlantillas(idEmpresa)
+            ]);
+
+            setSaleSuccess({
+                venta: ventaFull.data,
+                detalles: carrito.map(item => ({ ...item, productos: { nombre: item.nombre } })),
+                tipoComprobante: tiposComprobantes.find(t => t.id === idTipoCompSelected),
+                plantilla: plantillas.find(p => p.id_tipo_comprobante === idTipoCompSelected)
+            });
+
             limpiarCarrito();
-            onVentaExitosa();
         } catch (error) {
             toast.error("Error al procesar venta: " + error.message);
         } finally {
             setLoading(false);
         }
     };
+
+    const handlePrint = () => {
+        window.print();
+        onVentaExitosa();
+    };
+
+    const handleFinishWithoutPrint = () => {
+        onVentaExitosa();
+    };
+
+    if (saleSuccess) {
+        return (
+            <Overlay>
+                <ModalContainer style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '50px' }}>✅</div>
+                    <h2>¡Venta Exitosa!</h2>
+                    <p>El comprobante <strong>{saleSuccess.venta.numero_comprobante}</strong> ha sido generado.</p>
+
+                    <div style={{ display: 'none' }}>
+                        <ComprobantePrint
+                            venta={saleSuccess.venta}
+                            detalles={saleSuccess.detalles}
+                            empresa={profile?.empresa}
+                            tipoComprobante={saleSuccess.tipoComprobante}
+                            plantilla={saleSuccess.plantilla}
+                        />
+                    </div>
+
+                    <Footer style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                        <button className="confirm" onClick={handlePrint} style={{ flex: 1 }}>
+                            <Icon icon="mdi:printer" /> Imprimir
+                        </button>
+                        <button className="secondary" onClick={handleFinishWithoutPrint} style={{ flex: 1, background: '#eee', color: '#333' }}>
+                            Finalizar
+                        </button>
+                    </Footer>
+                </ModalContainer>
+            </Overlay>
+        );
+    }
 
     return (
         <Overlay className="animate-fade">
@@ -129,6 +214,21 @@ export const ModalCobro = ({ onVentaExitosa, onClose, idEmpresa, idUsuario, idCa
                                 </Dropdown>
                             )}
                         </SearchBox>
+                    </Section>
+
+                    <Section>
+                        <Label><Icon icon="mdi:file-document-outline" /> Comprobante</Label>
+                        <DocumentSelector>
+                            {tiposComprobantes.map(t => (
+                                <button
+                                    key={t.id}
+                                    className={idTipoCompSelected === t.id ? "active" : ""}
+                                    onClick={() => setIdTipoCompSelected(t.id)}
+                                >
+                                    {t.nombre}
+                                </button>
+                            ))}
+                        </DocumentSelector>
                     </Section>
 
                     <Section>
@@ -229,3 +329,28 @@ const PaymentsGrid = styled.div` display: grid; grid-template-columns: 1fr; gap:
 const PaymentItem = styled.div` display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: ${({ theme }) => theme.softBg}; border-radius: 12px; span { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; } input { width: 120px; text-align: right; background: transparent; border: none; font-weight: 800; font-size: 18px; color: ${({ theme }) => theme.primary}; &:focus { outline: none; } } `;
 const Summary = styled.div` background: ${({ theme }) => theme.softBg}; border-radius: 15px; padding: 20px; display: flex; flex-direction: column; gap: 8px; .row { display: flex; justify-content: space-between; font-weight: 600; font-size: 15px; &.highlight { color: ${({ theme }) => theme.danger}; } &.total { border-top: 1px dashed ${({ theme }) => theme.borderColor}; margin-top: 5px; padding-top: 5px; font-size: 22px; font-weight: 900; color: ${({ theme }) => theme.primary}; } &.footer { border-top: 1px solid ${({ theme }) => theme.borderColor}55; margin-top: 10px; padding-top: 15px; display: grid; grid-template-columns: 1fr 1fr; article { display: flex; flex-direction: column; .label { font-size: 11px; font-weight: 700; opacity: 0.6; } .val { font-size: 20px; font-weight: 800; } .text-success { color: #2ecc71; } .text-danger { color: #e74c3c; } } } } `;
 const Footer = styled.div` .confirm { width: 100%; padding: 18px; border-radius: 15px; background: ${({ theme }) => theme.primary}; color: white; font-weight: 800; font-size: 18px; box-shadow: 0 10px 20px ${({ theme }) => theme.primary}44; cursor: pointer; &:disabled { opacity: 0.5; box-shadow: none; cursor: not-allowed; } } `;
+
+const DocumentSelector = styled.div`
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    button {
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid ${({ theme }) => theme.borderColor};
+        background: ${({ theme }) => theme.softBg};
+        color: ${({ theme }) => theme.text};
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        &:hover {
+            border-color: ${({ theme }) => theme.primary};
+        }
+        &.active {
+            background: ${({ theme }) => theme.primary};
+            color: white;
+            border-color: ${({ theme }) => theme.primary};
+        }
+    }
+`;

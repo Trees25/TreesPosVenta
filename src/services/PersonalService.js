@@ -76,11 +76,16 @@ export const PersonalService = {
 
     // Cambiar estado de un empleado
     cambiarEstado: async (id, estado) => {
-        const { data, error } = await supabase
+        const { data, error, count } = await supabase
             .from("usuarios")
             .update({ estado })
-            .eq("id", id);
+            .eq("id", id)
+            .select(); // Forzar devolución de datos para verificar
+
         if (error) throw error;
+        if (!data || data.length === 0) {
+            throw new Error("No tienes permisos suficientes para cambiar el estado de este empleado o el empleado no existe.");
+        }
         return data;
     },
 

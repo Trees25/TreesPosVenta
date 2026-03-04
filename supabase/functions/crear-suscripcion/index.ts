@@ -10,35 +10,62 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req) => {
-    // Manejo de CORS con cabeceras explícitas
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
 
     try {
         const body = await req.json()
-        const { email, plan_nombre, monto, id_suscripcion_id_plan } = body
+        const { email, id_suscripcion_id_plan } = body
+        // El monto y plan_nombre que vienen del cliente ahora se usarán solo como referencia o se ignorarán para validación
 
-        if (!MP_ACCESS_TOKEN) {
+        if (!MP_ACCESS_TOKEN || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
             return new Response(
-                JSON.stringify({ error: "Falta MP_ACCESS_TOKEN en los secretos de Supabase." }),
+                JSON.stringify({ error: "Faltan variables de entorno (Secretos) en Supabase." }),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
             )
         }
 
-        // Payload para Mercado Pago Checkout Pro (Preferencias)
+        // 1. Extraer IDs de la referencia
+        if (!id_suscripcion_id_plan || !id_suscripcion_id_plan.includes("|")) {
+            throw new Error("Referencia de suscripción inválida.");
+        }
+        const [id_suscripcion, id_plan, id_empresa] = id_suscripcion_id_plan.split("|");
+
+        // 2. BUSCAR PRECIO REAL EN LA BASE DE DATOS (Validación Server-Side)
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const { data: plan, error: planError } = await supabase
+            .from('planes')
+            .select('nombre, monto')
+            .eq('id', Number(id_plan))
+            .single();
+
+        if (planError || !plan) {
+            throw new Error("El plan seleccionado no existe o no pudo ser validado.");
+        }
+
+        // 3. Calcular Recargo por Mora (Si aplica)
+        // Opcional: Podríamos re-calcularlo aquí consultando la suscripción actual, 
+        // pero por ahora validamos que el monto base sea correcto.
+        // Si el cliente envió un monto, validamos que sea >= al monto del plan.
+        const montoBase = Number(plan.monto);
+        const montoCliente = Number(body.monto);
+
+        if (montoCliente < montoBase) {
+            throw new Error("El monto enviado no coincide con el precio oficial del plan.");
+        }
+
+        // Payload para Mercado Pago
         const mpPayload = {
             items: [
                 {
-                    title: plan_nombre || "Suscripción PosVenta",
+                    title: `Suscripción ${plan.nombre}`,
                     quantity: 1,
-                    unit_price: Number(monto),
+                    unit_price: montoCliente, // Usamos el del cliente si pasó la validación (incluye recargo)
                     currency_id: "ARS"
                 }
             ],
-            payer: {
-                email: email
-            },
+            payer: { email },
             back_urls: {
                 success: `${SUPABASE_URL}/functions/v1/pago-exitoso`,
                 failure: `${SUPABASE_URL}/functions/v1/pago-exitoso`,
@@ -47,8 +74,6 @@ Deno.serve(async (req) => {
             auto_return: "all",
             external_reference: id_suscripcion_id_plan,
         }
-
-        console.log("Invocando MP con:", JSON.stringify(mpPayload));
 
         const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
             method: 'POST',
@@ -62,10 +87,8 @@ Deno.serve(async (req) => {
         const mpData = await mpResponse.json()
 
         if (!mpResponse.ok) {
-            console.error("Error devuelto por MP:", mpData);
-            const detailMsg = mpData.message || mpData.cause?.[0]?.description || JSON.stringify(mpData);
             return new Response(
-                JSON.stringify({ error: `Mercado Pago rechazó: ${detailMsg}`, details: mpData }),
+                JSON.stringify({ error: `Mercado Pago Error: ${mpData.message}`, details: mpData }),
                 { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
             )
         }
@@ -76,9 +99,8 @@ Deno.serve(async (req) => {
         )
 
     } catch (error) {
-        console.error("Error crítico en la Edge Function:", error.message);
         return new Response(
-            JSON.stringify({ error: `Error interno de la función: ${error.message}` }),
+            JSON.stringify({ error: error.message }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         )
     }

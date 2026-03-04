@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/AuthStore";
 import { SucursalService } from "../services/SucursalService";
 import { EmpresaService } from "../services/EmpresaService";
+import { AlmacenService } from "../services/AlmacenService";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -62,27 +63,78 @@ export const Sucursales = () => {
                 return;
             }
 
+            // Obtener almacenes de la empresa que no tengan sucursal asignada
+            const allAlmacenes = await AlmacenService.getAlmacenesByEmpresa(empresa.id);
+            const availableAlmacenes = allAlmacenes.filter(a => !a.id_sucursal);
+
+            if (availableAlmacenes.length === 0) {
+                const { isConfirmed } = await Swal.fire({
+                    title: "Almacén Requerido",
+                    text: "Para crear una sucursal, primero debes tener un almacén libre (sin sucursal asignada) en el Maestro de Almacenes.",
+                    icon: "info",
+                    confirmButtonText: "Ir a Almacenes",
+                    showCancelButton: true,
+                });
+
+                if (isConfirmed) {
+                    navigate("/inventario/almacenes");
+                }
+                return;
+            }
+
             const { value: formValues } = await Swal.fire({
                 title: 'Nueva Sucursal',
-                html:
-                    '<input id="swal-input1" class="swal2-input" placeholder="Nombre de la sucursal">' +
-                    '<input id="swal-input2" class="swal2-input" placeholder="Dirección">',
+                html: `
+                    <div style="text-align: left; padding: 10px;">
+                        <label style="font-weight: bold; font-size: 14px;">Nombre de la sucursal</label>
+                        <input id="swal-input1" class="swal2-input" placeholder="Ej: Sucursal Centro" style="margin-top: 5px; width: 100%; box-sizing: border-box;">
+                        
+                        <label style="font-weight: bold; font-size: 14px; margin-top: 15px; display: block;">Dirección</label>
+                        <input id="swal-input2" class="swal2-input" placeholder="Ej: Av. Siempreviva 123" style="margin-top: 5px; width: 100%; box-sizing: border-box;">
+                        
+                        <label style="font-weight: bold; font-size: 14px; margin-top: 15px; display: block;">Vincular Almacén</label>
+                        <select id="swal-select-alm" class="swal2-input" style="margin-top: 5px; width: 100%; box-sizing: border-box;">
+                            <option value="">-- Seleccionar almacén disponible --</option>
+                            ${availableAlmacenes.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('')}
+                        </select>
+                        <p style="font-size: 12px; color: #666; margin-top: 5px;">Cada sucursal debe tener un almacén asignado para el stock.</p>
+                    </div>
+                `,
                 focusConfirm: false,
                 preConfirm: () => {
+                    const nombre = document.getElementById('swal-input1').value;
+                    const idAlmacen = document.getElementById('swal-select-alm').value;
+                    if (!nombre) {
+                        Swal.showValidationMessage('El nombre es obligatorio');
+                        return false;
+                    }
+                    if (!idAlmacen) {
+                        Swal.showValidationMessage('Debes seleccionar un almacén');
+                        return false;
+                    }
                     return [
-                        document.getElementById('swal-input1').value,
-                        document.getElementById('swal-input2').value
-                    ]
+                        nombre,
+                        document.getElementById('swal-input2').value,
+                        idAlmacen
+                    ];
                 }
             });
 
             if (formValues && formValues[0]) {
-                await SucursalService.insertSucursal({
+                const nuevaSucursal = await SucursalService.insertSucursal({
                     nombre: formValues[0],
                     direccion: formValues[1],
                     id_empresa: empresa.id
                 });
-                toast.success("Sucursal agregada");
+
+                if (nuevaSucursal) {
+                    // Actualizar el almacén con el ID de la nueva sucursal
+                    await AlmacenService.updateAlmacen(formValues[2], {
+                        id_sucursal: nuevaSucursal.id
+                    });
+                    toast.success("Sucursal y almacén vinculados exitosamente");
+                }
+
                 fetchData();
             }
         } catch (error) {

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/AuthStore";
 import { ProductoService } from "../services/ProductoService";
 import { StockService } from "../services/StockService";
+import { AlmacenService } from "../services/AlmacenService";
 import { SucursalService } from "../services/SucursalService";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -31,15 +32,18 @@ export const AjusteStock = () => {
         try {
             setLoading(true);
             const empresaId = profile.empresa.id;
-            const [prodList, sucList] = await Promise.all([
+            const [prodList, almList] = await Promise.all([
                 ProductoService.listarProductos(empresaId),
-                SucursalService.getSucursalesByEmpresa(empresaId)
+                AlmacenService.getAlmacenesByEmpresa(empresaId)
             ]);
             setProductos(prodList || []);
+            const list = almList || [];
+            setAlmacenes(list);
 
-            // Extraer todos los almacenes de todas las sucursales
-            const allAlmacenes = sucList.flatMap(s => s.almacen || []);
-            setAlmacenes(allAlmacenes);
+            // Si solo hay un almacén, lo seleccionamos por defecto
+            if (list.length === 1) {
+                setValue("id_almacen", list[0].id);
+            }
         } catch (error) {
             toast.error("Error al cargar datos: " + error.message);
         } finally {
@@ -100,7 +104,7 @@ export const AjusteStock = () => {
                             <select {...register("id_almacen", { required: true })}>
                                 <option value="">Seleccionar almacén...</option>
                                 {almacenes.map(a => (
-                                    <option key={a.id} value={a.id}>{a.nombre} - {a.sucursales?.nombre}</option>
+                                    <option key={a.id} value={a.id}>{a.nombre} ({a.sucursales?.nombre || 'General'})</option>
                                 ))}
                             </select>
                         </InputGroup>

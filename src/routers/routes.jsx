@@ -16,6 +16,8 @@ const Terceros = lazy(() => import("../pages/Terceros").then(module => ({ defaul
 const GestionUsuarios = lazy(() => import("../pages/GestionUsuarios").then(module => ({ default: module.GestionUsuarios })));
 const ReporteVentas = lazy(() => import("../pages/ReporteVentas").then(module => ({ default: module.ReporteVentas })));
 const AjusteStock = lazy(() => import("../pages/AjusteStock").then(module => ({ default: module.AjusteStock })));
+const Almacenes = lazy(() => import("../pages/Almacenes").then(module => ({ default: module.Almacenes })));
+const ConfigurarPlantillas = lazy(() => import("../pages/ConfigurarPlantillas").then(module => ({ default: module.ConfigurarPlantillas })));
 import { NotFound } from "../pages/NotFound";
 
 export function AppRoutes() {
@@ -137,8 +139,24 @@ export function AppRoutes() {
                 <Route
                     path="/inventario/ajuste"
                     element={
-                        <ProtectedRoute accessBy="authenticated" module="Inventario">
+                        <ProtectedRoute accessBy="authenticated" module="Ajuste de Stock">
                             <AjusteStock />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/inventario/almacenes"
+                    element={
+                        <ProtectedRoute accessBy="authenticated" module="Inventario">
+                            <Almacenes />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/configuracion/plantillas"
+                    element={
+                        <ProtectedRoute accessBy="authenticated" module="Personal">
+                            <ConfigurarPlantillas />
                         </ProtectedRoute>
                     }
                 />

@@ -19,9 +19,13 @@ export const ProductoService = {
 
         if (error) {
             console.warn("RPC insertarproductos falló, usando fallback directo:", error.message);
+
+            // Limpiar campos que NO pertenecen a la tabla 'productos'
+            const { id_usuario, stock_inicial, stock_minimo, ubicacion, ...cleanData } = productoData;
+
             const { data: directData, error: directError } = await supabase
                 .from("productos")
-                .insert(productoData)
+                .insert(cleanData)
                 .select();
             if (directError) throw directError;
             return directData?.[0] || null;
@@ -52,6 +56,19 @@ export const ProductoService = {
         const { data, error } = await supabase.rpc("upsert_productos_masivo", {
             p_productos: productos,
             p_id_empresa: idEmpresa
+        });
+        if (error) throw error;
+        return data;
+    },
+
+    actualizarPreciosMasivo: async (filters) => {
+        const { data, error } = await supabase.rpc("actualizar_precios_masivo", {
+            p_id_empresa: filters.id_empresa,
+            p_id_categoria: filters.id_categoria || null,
+            p_id_proveedor: filters.id_proveedor || null,
+            p_valor: filters.valor || 0,
+            p_tipo_precio: filters.tipo_precio || 'venta',
+            p_modo: filters.modo || 'porcentaje'
         });
         if (error) throw error;
         return data;

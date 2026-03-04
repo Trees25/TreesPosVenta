@@ -1,0 +1,43 @@
+[
+  {
+    "ContainingType": "printservice.Controllers.PrinterController",
+    "Method": "GetLocalIP",
+    "RelativePath": "api/get-local-ip",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "printservice.Controllers.PrinterController",
+    "Method": "GetPrinters",
+    "RelativePath": "api/list",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "printservice.Controllers.PrinterController",
+    "Method": "PrintTicket",
+    "RelativePath": "api/print-ticket",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "printerName",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

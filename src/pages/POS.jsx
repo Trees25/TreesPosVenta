@@ -55,6 +55,7 @@ export const POS = () => {
 
                     if (product) {
                         agregarProducto(product);
+                        setFiltro(""); // Limpiar búsqueda al escanear
                         toast.success(`Scaneado: ${product.nombre}`);
                     } else {
                         toast.error(`Código no encontrado: ${buffer}`);
@@ -164,7 +165,8 @@ export const POS = () => {
 
     const filteredProducts = productos.filter(p =>
         p.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-        p.codigo_interno?.includes(filtro)
+        p.codigo_interno?.includes(filtro) ||
+        p.codigo_barras?.includes(filtro)
     );
 
     if (loading) return <LoadingContainer>Cargando POS...</LoadingContainer>;

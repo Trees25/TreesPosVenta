@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "etLT0EPx+GsQ1r3G6Idnj1CQbDsAoi6HK3NHQuZGqXw=",
+  "Source": "printservice",
+  "BasePath": "_content/printservice",
+  "Mode": "Default",
+  "ManifestType": "Publish",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

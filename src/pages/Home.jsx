@@ -155,31 +155,46 @@ export const Home = () => {
             )}
 
             {hasPermission('Inventario') && (
+              <div onClick={() => handleNavigation("/inventario/productos")} style={{ cursor: 'pointer' }}>
+                <StepItem>
+                  <div className="icon">📦</div>
+                  <div>
+                    <h4>Productos</h4>
+                    <p>Gestione sus productos y stock.</p>
+                  </div>
+                </StepItem>
+              </div>
+            )}
+
+            {hasPermission('Ajuste de Stock') && (
+              <div onClick={() => handleNavigation("/inventario/ajuste")} style={{ cursor: 'pointer' }}>
+                <StepItem>
+                  <div className="icon">🔧</div>
+                  <div>
+                    <h4>Ajuste de Stock</h4>
+                    <p>Registra entradas y salidas manuales.</p>
+                  </div>
+                </StepItem>
+              </div>
+            )}
+
+            {hasPermission('Inventario') && (
               <>
-                <div onClick={() => handleNavigation("/inventario/productos")} style={{ cursor: 'pointer' }}>
-                  <StepItem>
-                    <div className="icon">📦</div>
-                    <div>
-                      <h4>Productos</h4>
-                      <p>Gestione sus productos y stock.</p>
-                    </div>
-                  </StepItem>
-                </div>
-                <div onClick={() => handleNavigation("/inventario/ajuste")} style={{ cursor: 'pointer' }}>
-                  <StepItem>
-                    <div className="icon">🔧</div>
-                    <div>
-                      <h4>Ajuste de Stock</h4>
-                      <p>Registra entradas y salidas manuales.</p>
-                    </div>
-                  </StepItem>
-                </div>
                 <div onClick={() => handleNavigation("/inventario/categorias")} style={{ cursor: 'pointer' }}>
                   <StepItem>
                     <div className="icon">📁</div>
                     <div>
                       <h4>Categorías</h4>
                       <p>Organiza tus productos por grupos.</p>
+                    </div>
+                  </StepItem>
+                </div>
+                <div onClick={() => handleNavigation("/inventario/almacenes")} style={{ cursor: 'pointer' }}>
+                  <StepItem className="premium">
+                    <div className="icon">🏬</div>
+                    <div>
+                      <h4>Maestro de Almacenes</h4>
+                      <p>Gestiona tus depósitos y stock central.</p>
                     </div>
                   </StepItem>
                 </div>
@@ -235,15 +250,26 @@ export const Home = () => {
             )}
 
             {hasPermission('Personal') && (
-              <div onClick={() => handleNavigation("/personal")} style={{ cursor: 'pointer' }}>
-                <StepItem className="premium">
-                  <div className="icon">🎭</div>
-                  <div>
-                    <h4>Personal y Equipo</h4>
-                    <p>Administra empleados y permisos.</p>
-                  </div>
-                </StepItem>
-              </div>
+              <>
+                <div onClick={() => handleNavigation("/configuracion/plantillas")} style={{ cursor: 'pointer' }}>
+                  <StepItem className="premium">
+                    <div className="icon">⚙️</div>
+                    <div>
+                      <h4>Diseño de Comprobantes</h4>
+                      <p>Personaliza tus tickets y facturas.</p>
+                    </div>
+                  </StepItem>
+                </div>
+                <div onClick={() => handleNavigation("/personal")} style={{ cursor: 'pointer' }}>
+                  <StepItem className="premium">
+                    <div className="icon">🎭</div>
+                    <div>
+                      <h4>Personal y Equipo</h4>
+                      <p>Administra empleados y permisos.</p>
+                    </div>
+                  </StepItem>
+                </div>
+              </>
             )}
           </StepList>
         </NextSteps>

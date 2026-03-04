@@ -10,6 +10,8 @@ import Swal from "sweetalert2";
 import { supabase } from "../supabase";
 import { SucursalService } from "../services/SucursalService";
 import { PersonalService } from "../services/PersonalService";
+import { TercerosService } from "../services/TercerosService";
+import { MassiveUpdateModal } from "../components/MassiveUpdateModal";
 
 export const Productos = () => {
     const { user, profile } = useAuthStore();
@@ -20,6 +22,8 @@ export const Productos = () => {
     const [showModal, setShowModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [editingId, setEditingId] = useState(null);
+    const [proveedores, setProveedores] = useState([]);
+    const [showMassiveModal, setShowMassiveModal] = useState(false);
     const { register, handleSubmit, reset, setValue } = useForm();
 
     useEffect(() => {
@@ -32,14 +36,16 @@ export const Productos = () => {
             const empresaId = profile?.empresa?.id;
 
             if (empresaId) {
-                const [prodList, catList, sucList] = await Promise.all([
+                const [prodList, catList, sucList, provList] = await Promise.all([
                     ProductoService.listarProductos(empresaId),
                     CategoriaService.listarCategorias(empresaId),
-                    SucursalService.getSucursalesByEmpresa(empresaId)
+                    SucursalService.getSucursalesByEmpresa(empresaId),
+                    TercerosService.getTerceros(empresaId, 'proveedor')
                 ]);
                 setProductos(prodList || []);
                 setCategorias(catList || []);
                 setSucursales(sucList || []);
+                setProveedores(provList || []);
             }
         } catch (error) {
             console.error("Error loading products:", error);
@@ -60,8 +66,14 @@ export const Productos = () => {
                 ...data,
                 id_empresa: empresaId,
                 id_usuario: usuarioId,
-                id_sucursal: data.id_sucursal || profile.id_sucursal,
-                stock_inicial: data.stock_inicial || 0
+                id_sucursal: data.id_sucursal === 'all' ? null : (data.id_sucursal || profile.id_sucursal),
+                id_categoria: data.id_categoria ? parseInt(data.id_categoria) : null,
+                id_proveedor: data.id_proveedor ? parseInt(data.id_proveedor) : null,
+                stock_inicial: parseFloat(data.stock_inicial) || 0,
+                stock_minimo: parseFloat(data.stock_minimo) || 0,
+                precio_venta: parseFloat(data.precio_venta) || 0,
+                precio_compra: parseFloat(data.precio_compra) || 0,
+                fecha_vencimiento: data.fecha_vencimiento || null
             };
 
             if (editingId) {
@@ -71,6 +83,7 @@ export const Productos = () => {
                     precio_venta: parseFloat(data.precio_venta) || 0,
                     precio_compra: parseFloat(data.precio_compra) || 0,
                     id_categoria: data.id_categoria ? parseInt(data.id_categoria) : null,
+                    id_proveedor: data.id_proveedor ? parseInt(data.id_proveedor) : null,
                     codigo_barras: data.codigo_barras,
                     codigo_interno: data.codigo_interno,
                     sevende_por: data.sevende_por,
@@ -105,6 +118,7 @@ export const Productos = () => {
         setEditingId(prod.id);
         setValue("nombre", prod.nombre);
         setValue("id_categoria", prod.id_categoria);
+        setValue("id_proveedor", prod.id_proveedor);
         setValue("codigo_barras", prod.codigo_barras);
         setValue("codigo_interno", prod.codigo_interno);
         setValue("precio_compra", prod.precio_compra);
@@ -233,6 +247,9 @@ export const Productos = () => {
                             onChange={handleImportCSV}
                         />
                     </div>
+                    <SecondaryBtn onClick={() => setShowMassiveModal(true)} style={{ color: '#ff6a00', borderColor: '#ff6a0044' }}>
+                        ⚡ Actualización Masiva
+                    </SecondaryBtn>
                     <AddBtn onClick={() => setShowModal(true)}>+ Nuevo Producto</AddBtn>
                 </div>
             </Header>
@@ -326,6 +343,13 @@ export const Productos = () => {
                                     </select>
                                 </InputGroup>
                                 <InputGroup>
+                                    <label>Proveedor</label>
+                                    <select {...register("id_proveedor")}>
+                                        <option value="">Seleccionar...</option>
+                                        {proveedores.map(p => <option key={p.id} value={p.id}>{p.nombres}</option>)}
+                                    </select>
+                                </InputGroup>
+                                <InputGroup>
                                     <label>Código de Barras</label>
                                     <input {...register("codigo_barras")} placeholder="Escanea o escribe..." />
                                 </InputGroup>
@@ -398,6 +422,25 @@ export const Productos = () => {
                                         )}
                                     </select>
                                 </InputGroup>
+                                {editingId && (
+                                    <WarehouseStockList>
+                                        <label>Disponibilidad por Almacén</label>
+                                        <div className="stock-grid">
+                                            {productos.find(p => p.id === editingId)?.stock?.map(s => (
+                                                <div key={s.id} className="stock-item">
+                                                    <span>{s.almacen?.nombre}:</span>
+                                                    <strong>{s.stock} {productos.find(p => p.id === editingId)?.sevende_por === 'GRANEL' ? 'kg' : 'ud'}</strong>
+                                                </div>
+                                            )) || <p>Sin registros de stock.</p>}
+                                        </div>
+                                        {(profile?.id_rol === 1 || profile?.permisos?.some(p => p.modulos?.nombre === 'Ajuste de Stock')) && (
+                                            <Link to="/inventario/ajuste" className="ajuste-link">
+                                                Ir a Ajuste de Stock ↗
+                                            </Link>
+                                        )}
+                                    </WarehouseStockList>
+                                )}
+
                                 <InputGroup style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
                                     <input type="checkbox" {...register("maneja_inventarios")} defaultChecked />
                                     <label style={{ margin: 0 }}>Maneja Inventarios</label>
@@ -413,6 +456,15 @@ export const Productos = () => {
                     </Modal>
                 </ModalOverlay>
             )}
+
+            <MassiveUpdateModal
+                isOpen={showMassiveModal}
+                onClose={() => setShowMassiveModal(false)}
+                categorias={categorias}
+                proveedores={proveedores}
+                idEmpresa={profile?.empresa?.id}
+                onUpdate={fetchData}
+            />
         </Container>
     );
 };
@@ -445,3 +497,27 @@ const Modal = styled.div` background: ${({ theme }) => theme.cardBg}; padding: 4
 const FormGrid = styled.div` display: grid; grid-template-columns: 1fr 1fr; gap: 20px; `;
 const InputGroup = styled.div` display: flex; flex-direction: column; gap: 8px; label { font-size: 13px; font-weight: 600; } input, select { background: ${({ theme }) => theme.softBg}; border: 1px solid ${({ theme }) => theme.borderColor}; padding: 12px; border-radius: 8px; color: ${({ theme }) => theme.text}; } `;
 const ModalActions = styled.div` display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; button { padding: 12px 24px; border-radius: 12px; font-weight: 600; &.primary { background: ${({ theme }) => theme.primary}; color: white; } } `;
+
+const WarehouseStockList = styled.div`
+    grid-column: 1 / -1;
+    background: ${({ theme }) => theme.softBg}44;
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid ${({ theme }) => theme.borderColor}33;
+    label { display: block; margin-bottom: 12px; font-size: 13px; font-weight: 700; color: ${({ theme }) => theme.primary}; }
+    .stock-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+    .stock-item {
+        display: flex; justify-content: space-between; padding: 10px; background: ${({ theme }) => theme.bg}; border-radius: 10px; font-size: 13px;
+        span { opacity: 0.7; }
+        strong { color: ${({ theme }) => theme.primary}; }
+    }
+    .ajuste-link {
+        display: inline-block; font-size: 12px; color: ${({ theme }) => theme.primary}; font-weight: 700; text-decoration: none;
+        &:hover { text-decoration: underline; }
+    }
+`;
