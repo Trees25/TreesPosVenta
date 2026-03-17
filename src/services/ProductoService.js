@@ -75,7 +75,7 @@ export const ProductoService = {
     },
 
     exportarModeloCSV: () => {
-        const headers = ["nombre", "precio_venta", "precio_compra", "codigo_barras", "codigo_interno", "id_categoria", "sevende_por"];
+        const headers = ["nombre", "precio_venta", "precio_compra", "codigo_barras", "codigo_interno", "categoria", "sevende_por", "stock_inicial"];
         const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");

@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useVentaStore } from "../store/VentaStore";
 import { VentaService } from "../services/VentaService";
 import { supabase } from "../supabase";
@@ -123,7 +124,7 @@ export const ModalCobro = ({ onVentaExitosa, onClose, idEmpresa, idUsuario, idCa
             const idVenta = await VentaService.procesarVenta(ventaData);
             toast.success("Venta finalizada correctamente");
 
-            // Preparar para impresión
+            // Preparar para impresión real (Si hubo ID real)
             const [ventaFull, plantillas] = await Promise.all([
                 supabase.from("ventas").select("*, clientes_proveedores(nombres)").eq("id", idVenta).single(),
                 DocumentoService.listarPlantillas(idEmpresa)
@@ -138,7 +139,21 @@ export const ModalCobro = ({ onVentaExitosa, onClose, idEmpresa, idUsuario, idCa
 
             limpiarCarrito();
         } catch (error) {
-            toast.error("Error al procesar venta: " + error.message);
+            if (error.message === "OFFLINE_SAVED") {
+                toast.info("¡Venta guardada localmente! (Modo Offline)");
+                setSaleSuccess({
+                    venta: { 
+                        numero_comprobante: "PENDIENTE (OFFLINE)", 
+                        total: getTotal(),
+                        fecha: new Date().toISOString()
+                    },
+                    detalles: carrito.map(item => ({ ...item, productos: { nombre: item.nombre } })),
+                    offline: true 
+                });
+                limpiarCarrito();
+            } else {
+                toast.error("Error al procesar venta: " + error.message);
+            }
         } finally {
             setLoading(false);
         }
@@ -146,7 +161,9 @@ export const ModalCobro = ({ onVentaExitosa, onClose, idEmpresa, idUsuario, idCa
 
     const handlePrint = () => {
         window.print();
-        onVentaExitosa();
+        setTimeout(() => {
+            onVentaExitosa();
+        }, 500);
     };
 
     const handleFinishWithoutPrint = () => {
@@ -157,21 +174,26 @@ export const ModalCobro = ({ onVentaExitosa, onClose, idEmpresa, idUsuario, idCa
         return (
             <Overlay>
                 <ModalContainer style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '50px' }}>✅</div>
-                    <h2>¡Venta Exitosa!</h2>
-                    <p>El comprobante <strong>{saleSuccess.venta.numero_comprobante}</strong> ha sido generado.</p>
-
-                    <div style={{ display: 'none' }}>
-                        <ComprobantePrint
-                            venta={saleSuccess.venta}
-                            detalles={saleSuccess.detalles}
-                            empresa={profile?.empresa}
-                            tipoComprobante={saleSuccess.tipoComprobante}
-                            plantilla={saleSuccess.plantilla}
-                        />
+                    <div className="no-print">
+                        <div style={{ fontSize: '50px' }}>✅</div>
+                        <h2>¡Venta Exitosa!</h2>
+                        <p>El comprobante <strong>{saleSuccess.venta.numero_comprobante}</strong> ha sido generado.</p>
                     </div>
 
-                    <Footer style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                    {saleSuccess && createPortal(
+                        <div id="comprobante-print-container" className="only-print">
+                            <ComprobantePrint
+                                venta={saleSuccess.venta}
+                                detalles={saleSuccess.detalles}
+                                empresa={profile?.empresa}
+                                tipoComprobante={saleSuccess.tipoComprobante}
+                                plantilla={saleSuccess.plantilla}
+                            />
+                        </div>,
+                        document.body
+                    )}
+
+                    <Footer className="no-print" style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
                         <button className="confirm" onClick={handlePrint} style={{ flex: 1 }}>
                             <Icon icon="mdi:printer" /> Imprimir
                         </button>
@@ -316,8 +338,23 @@ export const ModalCobro = ({ onVentaExitosa, onClose, idEmpresa, idUsuario, idCa
     );
 };
 
-const Overlay = styled.div` position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(5px); `;
-const ModalContainer = styled.div` background: ${({ theme }) => theme.cardBg}; width: 100%; max-width: 500px; border-radius: 20px; border: 1px solid ${({ theme }) => theme.borderColor}55; padding: 25px; display: flex; flex-direction: column; gap: 20px; `;
+const Overlay = styled.div` position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(5px); padding: 20px; `;
+const ModalContainer = styled.div` 
+    background: ${({ theme }) => theme.cardBg}; 
+    width: 100%; 
+    max-width: 500px; 
+    max-height: 90vh;
+    border-radius: 20px; 
+    border: 1px solid ${({ theme }) => theme.borderColor}55; 
+    padding: 25px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 20px; 
+    overflow-y: auto;
+    
+    &::-webkit-scrollbar { width: 6px; }
+    &::-webkit-scrollbar-thumb { background: ${({ theme }) => theme.primary}44; border-radius: 10px; }
+`;
 const Header = styled.div` display: flex; justify-content: space-between; align-items: center; h2 { margin: 0; font-size: 20px; font-weight: 800; } .close { background: none; border: none; font-size: 24px; cursor: pointer; color: ${({ theme }) => theme.text}88; } `;
 const Content = styled.div` display: flex; flex-direction: column; gap: 20px; `;
 const Section = styled.div` display: flex; flex-direction: column; gap: 8px; `;

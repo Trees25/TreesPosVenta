@@ -11,6 +11,8 @@ import { Icon } from "@iconify/react";
 import Swal from "sweetalert2";
 import { supabase } from "../supabase";
 import { ModalCobro } from "../components/ModalCobro";
+import { ModalCierreCaja } from "../components/ModalCierreCaja";
+import { OfflineService } from "../services/OfflineService";
 
 export const POS = () => {
     const { user, profile } = useAuthStore();
@@ -24,11 +26,29 @@ export const POS = () => {
     const [loading, setLoading] = useState(true);
     const [filtro, setFiltro] = useState("");
     const [showCobro, setShowCobro] = useState(false);
+    const [showCierre, setShowCierre] = useState(false);
     const [empresa, setEmpresa] = useState(null);
     const [usuario, setUsuario] = useState(null);
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [ventasPendientes, setVentasPendientes] = useState([]);
+    const [syncing, setSyncing] = useState(false);
 
     useEffect(() => {
         if (user) checkCajaAndFetch();
+        
+        // Listeners de Red
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+        window.addEventListener("online", handleOnline);
+        window.addEventListener("offline", handleOffline);
+        
+        // Cargar pendientes iniciales
+        setVentasPendientes(OfflineService.listarVentasPendientes());
+
+        return () => {
+            window.removeEventListener("online", handleOnline);
+            window.removeEventListener("offline", handleOffline);
+        };
     }, [user]);
 
     // Lector de Código de Barras (HID Scanner)
@@ -92,9 +112,14 @@ export const POS = () => {
             const empId = eData?.id || usuarioData?.id_empresa;
             setEmpresa(eData || { id: empId });
 
+            // 1. Saneamiento: Cerrar cajas huérfanas (>24hs) antes de chequear
+            await supabase.rpc("cerrar_cajas_huerfanas", { p_id_usuario: usuarioData.id });
+
+            // 2. Buscar caja abierta actual
             let cajaAbierta = await CajaService.obtenerCajaAbierta(usuarioData.id);
+
             if (!cajaAbierta) {
-                // Obtener una caja física disponible con limit(1) para evitar error de mulitple rows
+                // Obtener una caja física disponible
                 const { data: cajas } = await supabase.from("caja").select("id").limit(1);
                 const bData = cajas?.[0];
 
@@ -127,28 +152,15 @@ export const POS = () => {
         }
     };
 
-    const handleCerrarCaja = async () => {
-        const { isConfirmed } = await Swal.fire({
-            title: "¿Cerrar caja?",
-            text: "Se finalizará tu turno de venta actual.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#ff6a00",
-            confirmButtonText: "Sí, cerrar",
-            cancelButtonText: "No todavía"
-        });
+    const handleCerrarCaja = () => {
+        setShowCierre(true);
+    };
 
-        if (isConfirmed) {
-            try {
-                await CajaService.cerrarCaja(idCaja, {
-                    monto_cierre: 0 // Simplificado por ahora
-                });
-                toast.success("Caja cerrada correctamente");
-                navigate("/");
-            } catch (error) {
-                toast.error("Error al cerrar caja: " + error.message);
-            }
-        }
+    const onCierreExitoso = () => {
+        limpiarCarrito();
+        setCaja(null);
+        setShowCierre(false);
+        navigate("/", { replace: true });
     };
 
     const handleFinalizar = () => {
@@ -161,6 +173,37 @@ export const POS = () => {
         // Recargar productos para ver stock actualizado
         const prodList = await ProductoService.listarProductos(empresa.id);
         setProductos(prodList);
+    };
+
+    const sincronizarVentas = async () => {
+        const pendientes = OfflineService.listarVentasPendientes();
+        if (pendientes.length === 0) return;
+
+        setSyncing(true);
+        let exitosas = 0;
+        let errores = 0;
+
+        for (const v of pendientes) {
+            try {
+                // Forzar intento real pasando por alto el check offline
+                await supabase.rpc("finalizar_venta_atomica", {
+                    _venta: v.data.venta,
+                    _detalles: v.data.detalles,
+                    _pagos: v.data.pagos
+                });
+                OfflineService.eliminarVentaPendiente(v.id_temp);
+                exitosas++;
+            } catch (error) {
+                console.error("Error sincronizando venta local:", error);
+                errores++;
+            }
+        }
+
+        setVentasPendientes(OfflineService.listarVentasPendientes());
+        setSyncing(false);
+
+        if (exitosas > 0) toast.success(`Sincronizadas ${exitosas} ventas.`);
+        if (errores > 0) toast.error(`${errores} ventas no pudieron sincronizarse.`);
     };
 
     const filteredProducts = productos.filter(p =>
@@ -179,6 +222,20 @@ export const POS = () => {
                     <CerrarCajaBtn onClick={handleCerrarCaja}>
                         <Icon icon="mdi:lock-outline" /> Cerrar Caja
                     </CerrarCajaBtn>
+                    
+                    {/* Indicador Offline */}
+                    <ConnectionBadge isOnline={isOnline}>
+                        <Icon icon={isOnline ? "mdi:wifi" : "mdi:wifi-off"} />
+                        {isOnline ? "En Línea" : "Sin Conexión"}
+                    </ConnectionBadge>
+
+                    {ventasPendientes.length > 0 && (
+                        <SyncBtn onClick={sincronizarVentas} disabled={!isOnline || syncing}>
+                            <Icon icon={syncing ? "mdi:loading" : "mdi:sync"} className={syncing ? "animate-spin" : ""} />
+                            Sincronizar ({ventasPendientes.length})
+                        </SyncBtn>
+                    )}
+
                     <SearchBox style={{ marginBottom: 0, flex: 1 }}>
                         <input
                             type="text"
@@ -237,6 +294,14 @@ export const POS = () => {
                 </CartFooter>
             </CartSection>
 
+            {showCierre && (
+                <ModalCierreCaja
+                    idCierre={idCaja}
+                    onClose={() => setShowCierre(false)}
+                    onCierreExitoso={onCierreExitoso}
+                />
+            )}
+
             {showCobro && (
                 <ModalCobro
                     onClose={() => setShowCobro(false)}
@@ -266,3 +331,34 @@ const CartFooter = styled.div` margin-top: auto; padding-top: 20px; border-top: 
 const TotalRow = styled.div` display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; span { font-size: 18px; font-weight: 600; &.amount { font-size: 32px; font-weight: 900; color: ${({ theme }) => theme.primary}; } } `;
 const PayBtn = styled.button` width: 100%; background: ${({ theme }) => theme.primary}; color: white; padding: 18px; border-radius: 15px; font-size: 18px; font-weight: 800; box-shadow: 0 10px 20px ${({ theme }) => theme.primary}44; &:disabled { opacity: 0.5; box-shadow: none; } `;
 const LoadingContainer = styled.div` height: calc(100vh - 80px); display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 800; color: ${({ theme }) => theme.primary}; `;
+
+const ConnectionBadge = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 800;
+    background: ${({ isOnline }) => isOnline ? "#2ecc7122" : "#e74c3c22"};
+    color: ${({ isOnline }) => isOnline ? "#2ecc71" : "#e74c3c"};
+    border: 1px solid ${({ isOnline }) => isOnline ? "#2ecc7144" : "#e74c3c44"};
+`;
+
+const SyncBtn = styled.button`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 800;
+    background: ${({ theme }) => theme.primary};
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 10px ${({ theme }) => theme.primary}44;
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+    .animate-spin { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+`;

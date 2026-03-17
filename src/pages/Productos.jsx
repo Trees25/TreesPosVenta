@@ -178,16 +178,32 @@ export const Productos = () => {
         reader.onload = async (event) => {
             try {
                 const text = event.target.result;
-                const lines = text.split("\n");
-                const headers = lines[0].split(",");
-                const data = lines.slice(1).filter(line => line.trim() !== "").map(line => {
-                    const values = line.split(",");
+                const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+                if (lines.length < 2) {
+                    toast.error("El CSV no tiene datos");
+                    return;
+                }
+
+                // Detectar delimitador (coma o punto y coma)
+                const firstLine = lines[0];
+                const delimiter = firstLine.includes(";") ? ";" : ",";
+
+                const headers = firstLine.split(delimiter).map(h =>
+                    h.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_')
+                );
+
+                console.log("Encabezados normalizados:", headers);
+
+                const data = lines.slice(1).map(line => {
+                    const values = line.split(delimiter);
                     const obj = {};
                     headers.forEach((header, i) => {
-                        obj[header.trim()] = values[i]?.trim();
+                        obj[header] = values[i]?.trim();
                     });
                     return obj;
                 });
+
+                console.log("Datos a importar (primeros 2):", data.slice(0, 2));
 
                 if (data.length === 0) {
                     toast.error("El CSV está vacío");
@@ -268,8 +284,8 @@ export const Productos = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredProductos.map((prod) => (
-                            <tr key={prod.id} className="animate-fade">
+                        {filteredProductos.map((prod, index) => (
+                            <tr key={prod.id || `prod-${index}`} className="animate-fade">
                                 <td>
                                     <ProdInfo>
                                         <div className="name">{prod.nombre}</div>
@@ -339,7 +355,7 @@ export const Productos = () => {
                                     <label>Categoría</label>
                                     <select {...register("id_categoria", { required: true })}>
                                         <option value="">Seleccionar...</option>
-                                        {categorias.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                                        {categorias.map((c, index) => <option key={c.id || `cat-${index}`} value={c.id}>{c.nombre}</option>)}
                                     </select>
                                 </InputGroup>
                                 <InputGroup>
@@ -412,8 +428,8 @@ export const Productos = () => {
                                 <InputGroup>
                                     <label>Sucursal Destino</label>
                                     <select {...register("id_sucursal")}>
-                                        {sucursales.map(s => (
-                                            <option key={s.id} value={s.id}>
+                                        {sucursales.map((s, index) => (
+                                            <option key={s.id || `suc-${index}`} value={s.id}>
                                                 {s.nombre}
                                             </option>
                                         ))}
@@ -426,8 +442,8 @@ export const Productos = () => {
                                     <WarehouseStockList>
                                         <label>Disponibilidad por Almacén</label>
                                         <div className="stock-grid">
-                                            {productos.find(p => p.id === editingId)?.stock?.map(s => (
-                                                <div key={s.id} className="stock-item">
+                                            {productos.find(p => p.id === editingId)?.stock?.map((s, index) => (
+                                                <div key={s.id || `stock-${index}`} className="stock-item">
                                                     <span>{s.almacen?.nombre}:</span>
                                                     <strong>{s.stock} {productos.find(p => p.id === editingId)?.sevende_por === 'GRANEL' ? 'kg' : 'ud'}</strong>
                                                 </div>
@@ -493,7 +509,34 @@ const StockBadge = styled.span`
 const ExpiryBadge = styled.span` background: ${({ $days }) => $days < 0 ? "#ff475722" : $days < 7 ? "#ffa50222" : "#2ed57311"}; color: ${({ $days }) => $days < 0 ? "#ff4757" : $days < 7 ? "#ffa502" : "#2ed57388"}; padding: 4px 10px; border-radius: 8px; font-weight: 700; font-size: 11px; `;
 const ActionIcons = styled.div` font-size: 18px; cursor: pointer; display: flex; gap: 10px; `;
 const ModalOverlay = styled.div` position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; `;
-const Modal = styled.div` background: ${({ theme }) => theme.cardBg}; padding: 40px; border-radius: 24px; width: 100%; max-width: 600px; border: 1px solid ${({ theme }) => theme.borderColor}; &.wide { max-width: 800px; } h2 { margin-bottom: 30px; } `;
+const Modal = styled.div`
+  background: ${({ theme }) => theme.cardBg};
+  padding: 40px;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 600px;
+  border: 1px solid ${({ theme }) => theme.borderColor};
+  max-height: 90vh;
+  overflow-y: auto;
+
+  &.wide { max-width: 800px; }
+  h2 { margin-bottom: 30px; }
+
+  /* Scrollbar styles */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: ${({ theme }) => theme.primary}44;
+    border-radius: 20px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: ${({ theme }) => theme.primary};
+  }
+`;
 const FormGrid = styled.div` display: grid; grid-template-columns: 1fr 1fr; gap: 20px; `;
 const InputGroup = styled.div` display: flex; flex-direction: column; gap: 8px; label { font-size: 13px; font-weight: 600; } input, select { background: ${({ theme }) => theme.softBg}; border: 1px solid ${({ theme }) => theme.borderColor}; padding: 12px; border-radius: 8px; color: ${({ theme }) => theme.text}; } `;
 const ModalActions = styled.div` display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; button { padding: 12px 24px; border-radius: 12px; font-weight: 600; &.primary { background: ${({ theme }) => theme.primary}; color: white; } } `;

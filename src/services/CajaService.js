@@ -44,5 +44,53 @@ export const CajaService = {
 
         if (error) throw error;
         return data?.[0] || null;
+    },
+
+    obtenerResumenCaja: async (idCierre) => {
+        // 1. Obtener datos maestros del cierre (monto apertura)
+        const { data: cierre, error: errorCierre } = await supabase
+            .from("cierrecaja")
+            .select("*")
+            .eq("id", idCierre)
+            .single();
+
+        if (errorCierre) throw errorCierre;
+
+        // 2. Obtener movimientos agrupados por método de pago
+        const { data: movimientos, error: errorMovs } = await supabase
+            .from("movimientos_caja")
+            .select("*, metodos_pago(nombre)")
+            .eq("id_cierre_caja", idCierre);
+
+        if (errorMovs) throw errorMovs;
+
+        // 3. Procesar resumen
+        const resumen = {
+            monto_apertura: cierre.monto_apertura || 0,
+            ingresos: {},
+            total_ingresos: 0,
+            total_egresos: 0,
+            efectivo_esperado: cierre.monto_apertura || 0
+        };
+
+        movimientos.forEach(m => {
+            const metodo = m.metodos_pago?.nombre || "Otros";
+            const montoNeto = m.tipo === "ingreso" ? (m.monto - m.vuelto) : -m.monto;
+
+            if (m.tipo === "ingreso") {
+                resumen.ingresos[metodo] = (resumen.ingresos[metodo] || 0) + montoNeto;
+                resumen.total_ingresos += montoNeto;
+                if (metodo.toLowerCase() === "efectivo") {
+                    resumen.efectivo_esperado += montoNeto;
+                }
+            } else {
+                resumen.total_egresos += m.monto;
+                if (metodo.toLowerCase() === "efectivo") {
+                    resumen.efectivo_esperado -= m.monto;
+                }
+            }
+        });
+
+        return resumen;
     }
 };

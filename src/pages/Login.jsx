@@ -121,7 +121,7 @@ const Container = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #0b0e14 0%, #1a1e26 100%);
+  background: ${({ theme }) => theme.bg};
   padding: 20px;
 
   .animate-in {
@@ -130,14 +130,14 @@ const Container = styled.div`
 `;
 
 const GlassCard = styled.div`
-  background: rgba(255, 255, 255, 0.03);
+  background: ${({ theme }) => theme.cardBg};
   backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid ${({ theme }) => theme.borderColor};
   border-radius: 24px;
   padding: 40px;
   width: 100%;
   max-width: 450px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
   animation: fadeIn 0.8s ease-out;
 
   @keyframes fadeIn {
@@ -157,7 +157,7 @@ const Header = styled.div`
     letter-spacing: -1px;
   }
   p {
-    color: rgba(255, 255, 255, 0.5);
+    color: ${({ theme }) => theme.text}88;
     font-size: 14px;
   }
 `;
@@ -175,19 +175,19 @@ const InputGroup = styled.div`
   label {
     font-size: 13px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
+    color: ${({ theme }) => theme.text};
     margin-left: 4px;
   }
   input {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: ${({ theme }) => theme.softBg};
+    border: 1px solid ${({ theme }) => theme.borderColor};
     border-radius: 12px;
     padding: 14px 16px;
-    color: white;
+    color: ${({ theme }) => theme.text};
     font-size: 15px;
     transition: all 0.3s ease;
     &::placeholder {
-      color: rgba(255, 255, 255, 0.2);
+      color: ${({ theme }) => theme.text}44;
     }
     &:focus {
       border-color: #ff6a00;
@@ -232,11 +232,11 @@ const Divider = styled.div`
   &::before, &::after {
     content: '';
     flex: 1;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid ${({ theme }) => theme.borderColor};
   }
   span {
     padding: 0 10px;
-    color: rgba(255, 255, 255, 0.3);
+    color: ${({ theme }) => theme.text}55;
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -269,7 +269,7 @@ const Footer = styled.div`
   margin-top: 32px;
   text-align: center;
   span {
-    color: rgba(255, 255, 255, 0.4);
+    color: ${({ theme }) => theme.text}66;
     font-size: 13px;
     a {
       color: #ff6a00;

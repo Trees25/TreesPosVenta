@@ -1,0 +1,27 @@
+﻿{
+  "status": "success",
+  "result": [
+    {
+      "projectId": "molinaautos",
+      "projectNumber": "618874417863",
+      "displayName": "molinaautos",
+      "name": "projects/molinaautos",
+      "resources": {
+        "hostingSite": "molinaautos"
+      },
+      "state": "ACTIVE",
+      "etag": "1_cedb17d6-f6b1-49e2-8ace-29c9c4eaf56b"
+    },
+    {
+      "projectId": "trees-posventa",
+      "projectNumber": "1047114883237",
+      "displayName": "Trees-PosVenta",
+      "name": "projects/trees-posventa",
+      "resources": {
+        "hostingSite": "trees-posventa"
+      },
+      "state": "ACTIVE",
+      "etag": "1_de71b27e-50dd-4da2-bbb8-a37966e647b7"
+    }
+  ]
+}

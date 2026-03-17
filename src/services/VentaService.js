@@ -1,17 +1,37 @@
 import { supabase } from "../supabase";
+import { OfflineService } from "./OfflineService";
 
 export const VentaService = {
     procesarVenta: async (ventaData) => {
-        // La venta DEBE ser atómica: Registrar venta, detalles y restar stock.
-        // Usaremos un RPC en Supabase para asegurar integridad referencial y de stock.
-        const { data, error } = await supabase.rpc("finalizar_venta_atomica", {
-            _venta: ventaData.venta, // Datos maestros (total, id_usuario, id_cliente, etc)
-            _detalles: ventaData.detalles, // Array de items (id_producto, cantidad, precio)
-            _pagos: ventaData.pagos // Array de cobros realizados (monto, id_metodo_pago)
-        });
+        try {
+            // Verificar conexión antes de intentar
+            if (!navigator.onLine) {
+                throw new Error("Sin conexión a internet");
+            }
 
-        if (error) throw error;
-        return data;
+            const { data, error } = await supabase.rpc("finalizar_venta_atomica", {
+                _venta: ventaData.venta,
+                _detalles: ventaData.detalles,
+                _pagos: ventaData.pagos
+            });
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            // Si el error es de conexión, guardamos offline
+            const isNetworkError = error.message.includes("fetch") || 
+                                  error.message.includes("connection") || 
+                                  error.message.includes("Sin conexión");
+
+            if (isNetworkError) {
+                console.warn("Detectado fallo de red, guardando venta en modo offline...");
+                const idLocal = OfflineService.guardarVentaPendiente(ventaData);
+                if (idLocal) {
+                    throw new Error("OFFLINE_SAVED");
+                }
+            }
+            throw error;
+        }
     },
 
     listarVentasUsuario: async (idUsuario, fechaIni, fechaFin) => {

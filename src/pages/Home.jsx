@@ -5,7 +5,6 @@ import Swal from "sweetalert2";
 import { useAuthStore } from "../store/AuthStore";
 import { useThemeStore } from "../store/ThemeStore";
 import { EmpresaService } from "../services/EmpresaService";
-import { SubscriptionStatus } from "../components/SubscriptionStatus";
 import { usePenalty } from "../hooks/usePenalty";
 
 export const Home = () => {
@@ -274,7 +273,6 @@ export const Home = () => {
           </StepList>
         </NextSteps>
       </Main>
-      <SubscriptionStatus />
     </Container >
   );
 };

@@ -5,12 +5,26 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { EmpresaService } from "../services/EmpresaService";
+import { useAuthStore } from "../store/AuthStore";
 
 export const Registro = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { register, handleSubmit, formState: { errors }, watch } = useForm();
+    const { signInWithGoogle } = useAuthStore();
     const password = watch("password");
+    const nombreNegocio = watch("nombreNegocio");
+
+    const loginWithGoogle = async () => {
+        try {
+            if (nombreNegocio) {
+                localStorage.setItem("pending_business_name", nombreNegocio);
+            }
+            await signInWithGoogle();
+        } catch (error) {
+            toast.error("Error con Google: " + error.message);
+        }
+    };
 
     const onSubmit = async (data) => {
         setLoading(true);
@@ -100,6 +114,12 @@ export const Registro = () => {
                     <SubmitButton type="submit" disabled={loading}>
                         {loading ? "Creando cuenta..." : "Registrar mi Negocio"}
                     </SubmitButton>
+
+                    <Divider><span>O registrarse con</span></Divider>
+                    <GoogleButton type="button" onClick={loginWithGoogle}>
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+                        Registrar con Google
+                    </GoogleButton>
                 </Form>
                 <Footer>
                     <span>¿Ya tienes cuenta? <Link to="/login">Inicia sesión aquí</Link></span>
@@ -114,19 +134,19 @@ const Container = styled.div`
     display: flex;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(135deg, #0b0e14 0%, #1a1e26 100%);
+    background: ${({ theme }) => theme.bg};
     padding: 20px;
 `;
 
 const GlassCard = styled.div`
-    background: rgba(255, 255, 255, 0.03);
+    background: ${({ theme }) => theme.cardBg};
     backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid ${({ theme }) => theme.borderColor};
     border-radius: 24px;
     padding: 40px;
     width: 100%;
     max-width: 550px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
     animation: fadeIn 0.8s ease-out;
 
     @keyframes fadeIn {
@@ -146,7 +166,7 @@ const Header = styled.div`
         letter-spacing: -1px;
     }
     p {
-        color: rgba(255, 255, 255, 0.5);
+        color: ${({ theme }) => theme.text}88;
         font-size: 14px;
     }
 `;
@@ -173,20 +193,20 @@ const InputGroup = styled.div`
     label {
         font-size: 13px;
         font-weight: 600;
-        color: rgba(255, 255, 255, 0.8);
+        color: ${({ theme }) => theme.text};
         margin-left: 4px;
     }
     input {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: ${({ theme }) => theme.softBg};
+        border: 1px solid ${({ theme }) => theme.borderColor};
         border-radius: 12px;
         padding: 14px 16px;
-        color: white;
+        color: ${({ theme }) => theme.text};
         font-size: 15px;
         transition: all 0.3s ease;
         width: 100%;
         &::placeholder {
-            color: rgba(255, 255, 255, 0.2);
+            color: ${({ theme }) => theme.text}44;
         }
         &:focus {
             border-color: #ff6a00;
@@ -227,7 +247,7 @@ const Footer = styled.div`
     margin-top: 25px;
     text-align: center;
     span {
-        color: rgba(255, 255, 255, 0.4);
+        color: ${({ theme }) => theme.text}66;
         font-size: 13px;
         a {
             color: #ff6a00;
@@ -239,4 +259,45 @@ const Footer = styled.div`
             }
         }
     }
+`;
+
+const Divider = styled.div`
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 10px 0;
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid ${({ theme }) => theme.borderColor};
+  }
+  span {
+    padding: 0 10px;
+    color: ${({ theme }) => theme.text}55;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+`;
+
+const GoogleButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: white;
+  color: #1a1e26;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  img {
+    width: 20px;
+  }
+  &:hover {
+    background: #f1f1f1;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  }
 `;

@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "../supabase";
 import { useAuthStore } from "../store/AuthStore";
 import { toast } from "sonner";
@@ -7,12 +8,20 @@ import { Link } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { VentaService } from "../services/VentaService";
 
+import { ComprobantePrint } from "../components/ComprobantePrint";
+
 export const ReporteVentas = () => {
     const { profile } = useAuthStore();
     const [reporte, setReporte] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [fechaInicio, setFechaInicio] = useState(new Date().toISOString().split('T')[0]);
-    const [fechaFin, setFechaFin] = useState(new Date().toISOString().split('T')[0]);
+    
+    // Default: Últimos 30 días
+    const today = new Date();
+    const lastMonth = new Date();
+    lastMonth.setDate(today.getDate() - 30);
+    
+    const [fechaInicio, setFechaInicio] = useState(lastMonth.toISOString().split('T')[0]);
+    const [fechaFin, setFechaFin] = useState(today.toISOString().split('T')[0]);
 
     // Lista de ventas por usuario
     const [showSalesModal, setShowSalesModal] = useState(false);
@@ -25,6 +34,21 @@ export const ReporteVentas = () => {
     const [selectedSale, setSelectedSale] = useState(null);
     const [saleDetails, setSaleDetails] = useState(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
+
+    // Impresión
+    const [saleToPrint, setSaleToPrint] = useState(null);
+    const [plantillas, setPlantillas] = useState([]);
+    const [tiposComprobantes, setTiposComprobantes] = useState([]);
+
+    useEffect(() => {
+        const fetchConfigs = async () => {
+            const { data: p } = await supabase.from("plantillas_comprobantes").select("*");
+            const { data: t } = await supabase.from("tipo_comprobantes").select("*");
+            setPlantillas(p || []);
+            setTiposComprobantes(t || []);
+        };
+        fetchConfigs();
+    }, []);
 
     useEffect(() => {
         if (profile?.empresa?.id) fetchReporte();
@@ -74,6 +98,25 @@ export const ReporteVentas = () => {
         } finally {
             setLoadingDetails(false);
         }
+    };
+
+    const handlePrintHistory = () => {
+        if (!selectedSale || !saleDetails) return;
+        
+        const tipoComp = tiposComprobantes.find(t => t.id === selectedSale.id_tipo_comprobante);
+        const plantilla = plantillas.find(p => p.id_tipo_comprobante === selectedSale.id_tipo_comprobante);
+
+        setSaleToPrint({
+            venta: selectedSale,
+            detalles: saleDetails.items,
+            tipoComprobante: tipoComp,
+            plantilla: plantilla
+        });
+
+        setTimeout(() => {
+            window.print();
+            setSaleToPrint(null);
+        }, 300);
     };
 
     return (
@@ -178,9 +221,9 @@ export const ReporteVentas = () => {
             {/* Modal de Detalle de Venta */}
             {showDetailModal && (
                 <Overlay onClick={() => setShowDetailModal(false)}>
-                    <Modal className="glass small" onClick={e => e.stopPropagation()}>
+                    <Modal className="glass small no-print" onClick={e => e.stopPropagation()}>
                         <ModalHeader>
-                            <h3>Detalle de Venta #{selectedSale?.id}</h3>
+                            <h3>Detalle de Venta #{selectedSale?.numero_comprobante || selectedSale?.id}</h3>
                             <button onClick={() => setShowDetailModal(false)}><Icon icon="mdi:close" /></button>
                         </ModalHeader>
                         <ModalBody>
@@ -188,6 +231,23 @@ export const ReporteVentas = () => {
                                 <p>Cargando detalles...</p>
                             ) : (
                                 <>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px' }}>
+                                        <button 
+                                            onClick={handlePrintHistory}
+                                            style={{ 
+                                                background: profile?.primary || '#ff6a00', 
+                                                color: 'white', 
+                                                padding: '8px 15px', 
+                                                borderRadius: '8px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '5px',
+                                                fontWeight: 'bold'
+                                            }}
+                                        >
+                                            <Icon icon="mdi:printer" /> Re-imprimir Ticket
+                                        </button>
+                                    </div>
                                     <h4>Productos</h4>
                                     <SimpleTable>
                                         <thead>
@@ -218,7 +278,7 @@ export const ReporteVentas = () => {
                                         <tbody>
                                             {saleDetails?.pagos.map((p, idx) => (
                                                 <tr key={idx}>
-                                                    <td>{p.metodos_pago?.nombre}</td>
+                                                    <td>{p.metodos_pago?.nombre ?? 'Otro'}</td>
                                                     <td>${p.monto}</td>
                                                 </tr>
                                             ))}
@@ -230,6 +290,20 @@ export const ReporteVentas = () => {
                     </Modal>
                 </Overlay>
             )}
+
+            {/* Contenedor de impresión oculto fuera del root */}
+            {saleToPrint && createPortal(
+                <div id="comprobante-print-container" className="only-print">
+                    <ComprobantePrint
+                        venta={saleToPrint.venta}
+                        detalles={saleToPrint.detalles}
+                        empresa={profile?.empresa}
+                        tipoComprobante={saleToPrint.tipoComprobante}
+                        plantilla={saleToPrint.plantilla}
+                    />
+                </div>,
+                document.body
+            )}
         </Container>
     );
 };
@@ -239,7 +313,93 @@ const Header = styled.header` display: flex; justify-content: space-between; ali
 const HomeBtn = styled(Link)` background: ${({ theme }) => theme.softBg}; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid ${({ theme }) => theme.borderColor}44; text-decoration: none; font-size: 20px; transition: all 0.2s; &:hover { background: ${({ theme }) => theme.primary}22; border-color: ${({ theme }) => theme.primary}; transform: scale(1.05); } `;
 const Filters = styled.div` display: flex; gap: 20px; .filter-group { display: flex; flex-direction: column; gap: 5px; label { font-size: 12px; font-weight: 700; color: ${({ theme }) => theme.text}88; text-transform: uppercase; } input { background: ${({ theme }) => theme.cardBg}; border: 1px solid ${({ theme }) => theme.borderColor}; color: ${({ theme }) => theme.text}; padding: 8px 15px; border-radius: 10px; font-weight: 600; } } `;
 const Content = styled.div` margin-top: 20px; `;
-const TableContainer = styled.div` background: ${({ theme }) => theme.cardBg}; border-radius: 24px; border: 1px solid ${({ theme }) => theme.borderColor}33; overflow: hidden; table { width: 100%; border-collapse: collapse; th { text-align: left; padding: 20px; background: ${({ theme }) => theme.softBg}; font-size: 12px; text-transform: uppercase; color: ${({ theme }) => theme.text}88; font-weight: 800; } td { padding: 20px; border-bottom: 1px solid ${({ theme }) => theme.borderColor}22; &.amount { font-weight: 900; font-size: 18px; color: ${({ theme }) => theme.primary}; } } } .user-info { display: flex; align-items: center; gap: 12px; .avatar { width: 32px; height: 32px; background: ${({ theme }) => theme.primary}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; } } .details { background: ${({ theme }) => theme.softBg}; color: ${({ theme }) => theme.text}; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; &:hover { background: ${({ theme }) => theme.primary}22; color: ${({ theme }) => theme.primary}; } } `;
+const TableContainer = styled.div`
+    background: ${({ theme }) => theme.cardBg};
+    border-radius: 24px;
+    border: 1px solid ${({ theme }) => theme.borderColor}33;
+    overflow-x: auto;
+    max-height: 65vh;
+    overflow-y: auto;
+
+    /* Scrollbar styles */
+    &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: ${({ theme }) => theme.primary}44;
+        border-radius: 20px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+        background-color: ${({ theme }) => theme.primary};
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            text-align: left;
+            padding: 20px;
+            background: ${({ theme }) => theme.softBg};
+            font-size: 12px;
+            text-transform: uppercase;
+            color: ${({ theme }) => theme.text}88;
+            font-weight: 800;
+            &::after {
+                content: '';
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                border-bottom: 1px solid ${({ theme }) => theme.borderColor}22;
+            }
+        }
+        td {
+            padding: 20px;
+            border-bottom: 1px solid ${({ theme }) => theme.borderColor}22;
+            &.amount {
+                font-weight: 900;
+                font-size: 18px;
+                color: ${({ theme }) => theme.primary};
+            }
+        }
+    }
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        .avatar {
+            width: 32px;
+            height: 32px;
+            background: ${({ theme }) => theme.primary};
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 14px;
+        }
+    }
+    .details {
+        background: ${({ theme }) => theme.softBg};
+        color: ${({ theme }) => theme.text};
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        &:hover {
+            background: ${({ theme }) => theme.primary}22;
+            color: ${({ theme }) => theme.primary};
+        }
+    }
+`;
 const Badge = styled.span` background: #2ecc7122; color: #2ecc71; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; `;
 const LoadingState = styled.div` text-align: center; padding: 100px; color: ${({ theme }) => theme.primary}; font-weight: 800; font-size: 20px; `;
 const EmptyState = styled.div` text-align: center; padding: 100px; color: ${({ theme }) => theme.text}44; font-size: 18px; font-weight: 600; `;
@@ -275,6 +435,21 @@ const ModalHeader = styled.div`
 const ModalBody = styled.div`
     flex: 1; overflow-y: auto;
     h4 { margin: 15px 0 10px; font-size: 16px; color: ${({ theme }) => theme.primary}; }
+
+    /* Scrollbar styles */
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: ${({ theme }) => theme.primary}44;
+        border-radius: 20px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+        background-color: ${({ theme }) => theme.primary};
+    }
 `;
 
 const SimpleTable = styled.table`

@@ -136,8 +136,8 @@ export const Categorias = () => {
                 {loading ? (
                     <p>Cargando...</p>
                 ) : categorias.length > 0 ? (
-                    categorias.map((cat) => (
-                        <CatCard key={cat.id} className="glass">
+                    categorias.map((cat, index) => (
+                        <CatCard key={cat.id || `cat-${index}`} className="glass">
                             <div className="icon">
                                 {(() => {
                                     const rawIcon = cat.icono || "";
@@ -354,6 +354,25 @@ const IconGrid = styled.div`
     padding: 5px;
     background: ${({ theme }) => theme.softBg};
     border-radius: 12px;
+
+    /* Scrollbar styles */
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: ${({ theme }) => theme.primary}44;
+        border-radius: 20px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+        background-color: ${({ theme }) => theme.primary};
+    }
+
+    @media (max-width: 480px) {
+        grid-template-columns: repeat(4, 1fr);
+    }
 `;
 
 const IconOption = styled.button`

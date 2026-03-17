@@ -71,4 +71,81 @@ export const GlobalStyles = createGlobalStyle`
   .premium-shadow {
     box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4);
   }
+
+  /* Utilidad global para tablas responsivas */
+  .responsive-table-container {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 70vh;
+    -webkit-overflow-scrolling: touch; /* Suavidad en iOS */
+
+    &::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: ${({ theme }) => theme.primary}44;
+        border-radius: 20px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+        background-color: ${({ theme }) => theme.primary};
+    }
+    
+    /* Encabezados pegajosos para las tablas dentro de este contenedor */
+    table th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: ${({ theme }) => theme.softBg};
+    }
+  }
+
+  /* Clases auxiliares de impresión */
+  .only-print {
+    display: none !important;
+  }
+
+  @media print {
+    @page {
+      margin: 0;
+      size: auto;
+    }
+    
+    /* Ocultar absolutamente todo en la pantalla */
+    html, body {
+      height: auto !important;
+      overflow: visible !important;
+      background: white !important;
+    }
+
+    /* Ocultar el root de React para que no genere scroll ni páginas extras */
+    #root {
+      display: none !important;
+    }
+
+    /* Solo mostrar lo que está en los portales o contenedores de impresión fuera del root */
+    #comprobante-print-container, 
+    #reporte-cierre-container {
+      display: block !important;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 80mm;
+      margin: 0 !important;
+      padding: 0 !important;
+      visibility: visible !important;
+    }
+
+    /* Asegurar que el contenido interno sea visible */
+    #comprobante-print-container *,
+    #reporte-cierre-container * {
+      visibility: visible !important;
+    }
+
+    /* Clases de emergencia */
+    .no-print { display: none !important; }
+  }
 `;

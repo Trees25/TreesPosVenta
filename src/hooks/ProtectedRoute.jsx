@@ -29,12 +29,23 @@ export const ProtectedRoute = ({ children, accessBy, module }) => {
     if (accessBy === "authenticated") {
         if (!user) return <Navigate to="/login" />;
 
+        // --- VALIDACIÓN DE ONBOARDING ---
+        // Si el usuario está autenticado pero no tiene empresa (ej: entró por Google por primera vez)
+        const needsOnboarding = profile && !profile.id_empresa;
+        if (needsOnboarding && location.pathname !== "/onboarding") {
+            return <Navigate to="/onboarding" />;
+        }
+        // Si ya tiene empresa y trata de entrar a onboarding, lo mandamos a home
+        if (!needsOnboarding && location.pathname === "/onboarding") {
+            return <Navigate to="/" />;
+        }
+
         // Validación de suscripción para Administradores
         if (profile?.id_rol === 1) {
             const diasRestantes = profile.suscripcion?.dias_restantes;
             // Bloqueo total (Suspensión) solo tras 30 días de mora
             const isSuspended = diasRestantes !== undefined && diasRestantes < -30;
-            const allowedPaths = ["/planes", "/mi-perfil"];
+            const allowedPaths = ["/planes", "/mi-perfil", "/onboarding"];
 
             if (isSuspended && !allowedPaths.includes(location.pathname)) {
                 return <Navigate to="/planes?suspended=true" />;

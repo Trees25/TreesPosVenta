@@ -7,6 +7,9 @@ import { useEffect } from "react";
 import { supabase } from "./supabase";
 import { useAuthStore } from "./store/AuthStore";
 import { UsuarioService } from "./services/UsuarioService";
+import { SuscripcionService } from "./services/SuscripcionService";
+import { EmpresaService } from "./services/EmpresaService";
+import { SubscriptionStatus } from "./components/SubscriptionStatus";
 
 function App() {
     const { themeStyle } = useThemeStore();
@@ -49,6 +52,29 @@ function App() {
                     setTimeout(() => signOut(), 3000);
                 }
 
+                if (profileData) {
+                    const idEmpresa = profileData.id_empresa || profileData.empresa?.id;
+                    if (idEmpresa) {
+                        let subData = await SuscripcionService.obtenerSuscripcionActiva(idEmpresa);
+
+                        // Si no hay suscripción activa en la BD, asignamos un estado inactivo por defecto.
+                        if (!subData) {
+                            subData = {
+                                estado: 'inactivo',
+                                dias_restantes: 0,
+                                plan: { nombre: 'Sin Suscripción Activa' }
+                            };
+                        } else if (subData.fecha_fin) {
+                            // Calculamos dinámicamente cuántos días faltan para la fecha_fin
+                            const fechaFin = new Date(subData.fecha_fin);
+                            const hoy = new Date();
+                            const msRestantes = fechaFin - hoy;
+                            subData.dias_restantes = Math.ceil(msRestantes / (1000 * 60 * 60 * 24));
+                        }
+                        profileData.suscripcion = subData;
+                    }
+                }
+
                 setProfile(profileData);
             } catch (error) {
                 console.error("Error cargando perfil:", error);
@@ -79,6 +105,7 @@ function App() {
             <GlobalStyles />
             <Toaster position="top-right" richColors />
             <AppRoutes />
+            <SubscriptionStatus />
         </ThemeProvider>
     );
 }

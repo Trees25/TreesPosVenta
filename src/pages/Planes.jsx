@@ -92,7 +92,18 @@ export const Planes = () => {
             return toast.info("Ya tienes este plan activo");
         }
 
-        const diasRestantes = currentSub?.dias_restantes || 0;
+        // Sacamos los días restantes del store global (que ya tiene el cálculo dinámico matemático)
+        // o repetimos el cálculo si por alguna razón no está en el store
+        let diasRestantes = profile?.suscripcion?.dias_restantes;
+        
+        if (diasRestantes === undefined && currentSub?.fecha_fin) {
+            const fechaFin = new Date(currentSub.fecha_fin);
+            const hoy = new Date();
+            diasRestantes = Math.ceil((fechaFin - hoy) / (1000 * 60 * 60 * 24));
+        } else if (diasRestantes === undefined) {
+            diasRestantes = 0;
+        }
+
         const needsPenalty = diasRestantes < -10;
         const recargo = needsPenalty ? parseFloat(plan.monto) * 0.03 : 0;
 

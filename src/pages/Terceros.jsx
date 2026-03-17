@@ -138,7 +138,7 @@ export const Terceros = ({ tipo = 'cliente' }) => {
                 <button className="add-btn" onClick={handleAdd}>+ Nuevo {tipo === 'cliente' ? 'Cliente' : 'Proveedor'}</button>
             </header>
 
-            <TableContainer className="glass animate-up">
+            <TableContainer className="glass animate-up responsive-table-container">
                 <table>
                     <thead>
                         <tr>
@@ -209,7 +209,6 @@ const HomeBtn = styled(Link)`
 const TableContainer = styled.div`
     background: ${({ theme }) => theme.cardBg};
     border-radius: 20px;
-    overflow: hidden;
     border: 1px solid ${({ theme }) => theme.borderColor};
     table {
         width: 100%;

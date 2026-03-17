@@ -192,8 +192,13 @@ const Modal = styled.div`
     border-radius: 24px;
     width: 100%;
     max-width: 600px;
+    max-height: 90vh;
     border: 1px solid ${({ theme }) => theme.borderColor}44;
     box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    overflow-y: auto;
+
+    &::-webkit-scrollbar { width: 6px; }
+    &::-webkit-scrollbar-thumb { background: ${({ theme }) => theme.primary}44; border-radius: 10px; }
 `;
 
 const Header = styled.div`
