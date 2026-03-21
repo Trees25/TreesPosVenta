@@ -36,7 +36,10 @@ export const Registro = () => {
                 options: {
                     data: {
                         nombre_empresa: data.nombreNegocio,
-                        nombres: data.nombreNegocio // Usamos el nombre del negocio como nombre del admin por defecto
+                        empresa: data.nombreNegocio, // Variante fallback
+                        nombres: data.nombreNegocio,
+                        nombre: data.nombreNegocio,  // Variante fallback
+                        razon_social: data.nombreNegocio // Variante alternativa
                     }
                 }
             });
