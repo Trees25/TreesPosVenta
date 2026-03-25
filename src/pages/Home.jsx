@@ -153,7 +153,7 @@ export const Home = () => {
               </div>
             )}
 
-            {hasPermission('Inventario') && (
+            {(hasPermission('Inventario') || hasPermission('Productos')) && (
               <div onClick={() => handleNavigation("/inventario/productos")} style={{ cursor: 'pointer' }}>
                 <StepItem>
                   <div className="icon">📦</div>

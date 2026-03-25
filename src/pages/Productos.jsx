@@ -11,6 +11,7 @@ import { supabase } from "../supabase";
 import { SucursalService } from "../services/SucursalService";
 import { PersonalService } from "../services/PersonalService";
 import { TercerosService } from "../services/TercerosService";
+import { AlmacenService } from "../services/AlmacenService";
 import { MassiveUpdateModal } from "../components/MassiveUpdateModal";
 
 export const Productos = () => {
@@ -184,6 +185,17 @@ export const Productos = () => {
                     return;
                 }
 
+                const empresaId = profile?.empresa?.id;
+                let userAlmacenId = null;
+                if (empresaId) {
+                    try {
+                        const almacenes = await AlmacenService.getAlmacenesByEmpresa(empresaId);
+                        // Simplificación: Agarra el almacén de la sucursal o, si no existe o es una sola, agarra el primer almacén principal de la empresa.
+                        const userAlmacen = almacenes.find(a => a.id_sucursal == profile?.id_sucursal) || almacenes[0];
+                        if (userAlmacen) userAlmacenId = userAlmacen.id;
+                    } catch (e) { console.error("Error obteniendo el almacén:", e); }
+                }
+
                 // Detectar delimitador (coma o punto y coma)
                 const firstLine = lines[0];
                 const delimiter = firstLine.includes(";") ? ";" : ",";
@@ -192,29 +204,140 @@ export const Productos = () => {
                     h.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_')
                 );
 
-                console.log("Encabezados normalizados:", headers);
-
                 const data = lines.slice(1).map(line => {
                     const values = line.split(delimiter);
                     const obj = {};
                     headers.forEach((header, i) => {
                         obj[header] = values[i]?.trim();
                     });
+                    
+                    // Añadir referencias al objeto explícitamente para que la RPC las lea
+                    obj.id_sucursal = profile?.id_sucursal;
+                    obj.id_usuario = profile?.id;
+                    if (userAlmacenId) {
+                        obj.id_almacen = userAlmacenId;
+                        obj.almacen_id = userAlmacenId; // Por si la db usa este nombre
+                    }
+                    
                     return obj;
                 });
 
-                console.log("Datos a importar (primeros 2):", data.slice(0, 2));
-
-                if (data.length === 0) {
-                    toast.error("El CSV está vacío");
-                    return;
-                }
-
-                const empresaId = profile?.empresa?.id;
                 if (empresaId) {
-                    const result = await ProductoService.importarProductosMasivo(data, empresaId);
-                    toast.success(`Importación exitosa: ${result.insertados} insertados, ${result.actualizados} actualizados.`);
-                    fetchData();
+                    setLoading(true);
+                    try {
+                        if (!userAlmacenId) {
+                            throw new Error("No pudimos detectar a qué almacén físico pertenece tu sucursal. Revisa tu configuración.");
+                        }
+
+                        let insertados = 0;
+                        let actualizados = 0;
+                        for (const item of data) {
+                            if (!item.nombre) continue; // Saltar si no hay nombre
+                            
+                            // Buscar id de categoría por nombre, ignorando mayúsculas/minúsculas
+                            const catName = item.categoria?.trim()?.toLowerCase();
+                            const catObj = categorias.find(c => c.nombre?.toLowerCase() === catName);
+                            // También buscamos el proveedor si estuviese
+                            const provName = item.proveedor?.trim()?.toLowerCase();
+                            const provObj = proveedores.find(p => p.nombres?.toLowerCase() === provName);
+                            
+                            const codigo_barras = item.codigo_barras?.trim() || '';
+                            const codigo_interno = item.codigo_interno?.trim() || '';
+                            
+                            const payload = {
+                                nombre: item.nombre,
+                                id_categoria: catObj ? parseInt(catObj.id) : null,
+                                id_proveedor: provObj ? parseInt(provObj.id) : null,
+                                codigo_barras: codigo_barras,
+                                codigo_interno: codigo_interno,
+                                precio_compra: parseFloat(item.precio_compra) || 0,
+                                precio_venta: parseFloat(item.precio_venta) || 0,
+                                sevende_por: (item.sevende_por || 'UNIDAD').toUpperCase() === 'GRANEL' ? 'GRANEL' : 'UNIDAD',
+                                fecha_vencimiento: null,
+                                stock_inicial: parseFloat(item.stock_inicial) || 0,
+                                stock_minimo: 0,
+                                dias_alerta: 7,
+                                id_sucursal: profile?.id_sucursal,
+                                maneja_inventarios: true,
+                                id_empresa: empresaId,
+                                id_usuario: profile?.id
+                            };
+                            
+                            // Búsqueda de duplicados para Upsert
+                            let existingProduct = null;
+                            if (codigo_barras || codigo_interno) {
+                                let query = supabase.from('productos').select('id').eq('id_empresa', empresaId);
+                                if (codigo_barras) query = query.eq('codigo_barras', codigo_barras);
+                                else if (codigo_interno) query = query.eq('codigo_interno', codigo_interno);
+                                
+                                const { data: checkData } = await query.limit(1);
+                                if (checkData && checkData.length > 0) {
+                                    existingProduct = checkData[0];
+                                }
+                            }
+                            
+                            if (existingProduct) {
+                                // 1. Update producto (limpiando campos que no son de la tabla)
+                                const { stock_inicial, stock_minimo, id_usuario, id_sucursal, maneja_inventarios, ...updatePayload } = payload;
+                                const { error: updErr } = await supabase.from('productos').update(updatePayload).eq('id', existingProduct.id);
+                                if (updErr) throw new Error("Fallo actualizando producto: " + updErr.message);
+
+                                // 2. OVERWRITE Stock if user provided it in CSV
+                                if (typeof item.stock_inicial !== 'undefined' && item.stock_inicial !== '') {
+                                    const parsedStock = parseFloat(item.stock_inicial) || 0;
+                                    const parsedMinimo = parseFloat(item.stock_minimo) || 0;
+                                    
+                                    const { data: currentStockRows } = await supabase.from('stock')
+                                        .select('id')
+                                        .eq('id_producto', existingProduct.id)
+                                        .eq('id_almacen', userAlmacenId);
+                                    
+                                    if (currentStockRows && currentStockRows.length > 0) {
+                                        const { error: stockUpdErr } = await supabase.from('stock').update({ stock: parsedStock }).eq('id', currentStockRows[0].id);
+                                        if (stockUpdErr) throw new Error("Fallo actualizando inventario: " + stockUpdErr.message);
+                                    } else {
+                                        const { error: stockInsErr } = await supabase.from('stock').insert({
+                                            id_producto: existingProduct.id,
+                                            id_almacen: userAlmacenId,
+                                            stock: parsedStock,
+                                            stock_minimo: parsedMinimo
+                                        });
+                                        if (stockInsErr) throw new Error("Fallo creando inventario: " + stockInsErr.message);
+                                    }
+                                }
+                                actualizados++;
+                            } else {
+                                // 1. Insert producto directamente a la tabla
+                                const { stock_inicial, stock_minimo, id_usuario, id_sucursal, maneja_inventarios, ...cleanPayload } = payload;
+                                const { data: directData, error: directError } = await supabase
+                                    .from("productos")
+                                    .insert(cleanPayload)
+                                    .select();
+                                
+                                if (directError) throw directError;
+                                const nuevoPro = directData[0];
+
+                                // 2. Insertar stock exacto al almacén del usuario activo
+                                if (nuevoPro) {
+                                    const { error: stockInsErr } = await supabase.from('stock').insert({
+                                        id_producto: nuevoPro.id,
+                                        id_almacen: userAlmacenId,
+                                        stock: parseFloat(item.stock_inicial) || 0,
+                                        stock_minimo: parseFloat(item.stock_minimo) || 0
+                                    });
+                                    if (stockInsErr) throw new Error("Fallo guardando stock inicial del producto nuevo: " + stockInsErr.message);
+                                }
+                                insertados++;
+                            }
+                        }
+                        toast.success(`Importación finalizada: ${insertados} insertados y ${actualizados} actualizados.`);
+                        fetchData();
+                    } catch (error) {
+                        console.error("Error importando:", error);
+                        toast.error(`Ocurrió un error en la importación: ${error.message || ''}`);
+                    } finally {
+                        setLoading(false);
+                    }
                 }
             } catch (error) {
                 console.error("Error al importar CSV:", error);
@@ -297,7 +420,11 @@ export const Productos = () => {
                                 <td><PriceText>${prod.precio_venta}</PriceText></td>
                                 <td>
                                     {(() => {
-                                        const branchStock = prod.stock?.find(s => s.almacen?.id_sucursal === profile?.id_sucursal);
+                                        // Buscar el stock de su sucursal, o usar el primer almacén disponible como sucursal principal
+                                        const branchStock = prod.stock?.length > 0 
+                                            ? (prod.stock.find(s => s.almacen?.id_sucursal == profile?.id_sucursal) || prod.stock[0]) 
+                                            : null;
+                                            
                                         const stockQty = branchStock?.stock || 0;
                                         const minQty = branchStock?.stock_minimo || 0;
 

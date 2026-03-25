@@ -1,0 +1,4 @@
+nombre,precio_venta,precio_compra,codigo_barras,codigo_interno,categoria,sevende_por,stock_inicial
+Coca Cola 2L,2500.00,1800.00,7791234567890,BEB-01,Bebidas,UNIDAD,48
+Alfajor Jorgito,800.00,500.00,7790987654321,SNK-01,Snacks,UNIDAD,120
+Pan Integral,1500.00,1000.00,7791122334455,PAN-01,Panadería,UNIDAD,30

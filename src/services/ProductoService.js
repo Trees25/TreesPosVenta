@@ -21,14 +21,40 @@ export const ProductoService = {
             console.warn("RPC insertarproductos falló, usando fallback directo:", error.message);
 
             // Limpiar campos que NO pertenecen a la tabla 'productos'
-            const { id_usuario, stock_inicial, stock_minimo, ubicacion, ...cleanData } = productoData;
+            const { id_usuario, stock_inicial, stock_minimo, ubicacion, maneja_inventarios, id_sucursal, ...cleanData } = productoData;
 
             const { data: directData, error: directError } = await supabase
                 .from("productos")
                 .insert(cleanData)
                 .select();
+            
             if (directError) throw directError;
-            return directData?.[0] || null;
+            const nuevoProducto = directData?.[0];
+
+            // Si hay un stock inicial y el producto se creó correctamente, insertarlo manualmente en la tabla correspondiente
+            if (nuevoProducto) {
+                try {
+                    // Obtener almacen según sucursal
+                    let idAlmacen = null;
+                    if (productoData.id_sucursal) {
+                        const { data: almacenData } = await supabase.from('almacen').select('id').eq('id_sucursal', productoData.id_sucursal).limit(1);
+                        idAlmacen = almacenData?.[0]?.id;
+                    }
+
+                    if (idAlmacen && productoData.stock_inicial > 0) {
+                        await supabase.from("stock").insert({
+                            id_producto: nuevoProducto.id,
+                            id_almacen: idAlmacen,
+                            stock: productoData.stock_inicial || 0,
+                            stock_minimo: productoData.stock_minimo || 0
+                        });
+                    }
+                } catch (stockError) {
+                    console.error("Fallo al insertar stock manual tras fallback:", stockError);
+                }
+            }
+
+            return nuevoProducto;
         }
 
         return data;

@@ -95,7 +95,7 @@ export const POS = () => {
         try {
             setLoading(true);
             const [{ data: uDatas }, { data: eDatas }] = await Promise.all([
-                supabase.from("usuarios").select("id, id_empresa").eq("id_auth", user.id).limit(2),
+                supabase.from("usuarios").select("id, id_empresa, id_sucursal").eq("id_auth", user.id).limit(2),
                 supabase.from("empresa").select("id, id_auth_user").eq("id_auth_user", user.id).limit(2)
             ]);
 
@@ -109,7 +109,17 @@ export const POS = () => {
             }
 
             setUsuario(usuarioData);
-            const empId = eData?.id || usuarioData?.id_empresa;
+            
+            // LA MAGIA ESTABA AQUÍ: El sistema priorizaba empresas fantasmas autogeneradas (eData.id) 
+            // sobre el id_empresa real y legítimo que le delegó el Administrador (usuarioData.id_empresa).
+            const empId = usuarioData?.id_empresa || eData?.id;
+            
+            if (!empId) {
+                toast.error("Error: Tu perfil de empleado no tiene compañía asignada.");
+                setLoading(false);
+                return;
+            }
+            
             setEmpresa(eData || { id: empId });
 
             // 1. Saneamiento: Cerrar cajas huérfanas (>24hs) antes de chequear
@@ -119,9 +129,18 @@ export const POS = () => {
             let cajaAbierta = await CajaService.obtenerCajaAbierta(usuarioData.id);
 
             if (!cajaAbierta) {
-                // Obtener una caja física disponible
-                const { data: cajas } = await supabase.from("caja").select("id").limit(1);
-                const bData = cajas?.[0];
+                // Obtener una caja física disponible para la sucursal específica del usuario
+                const { data: cajas } = await supabase.from("caja")
+                                    .select("id")
+                                    .eq("id_sucursal", usuarioData.id_sucursal)
+                                    .limit(1);
+                
+                let cajaId = cajas?.[0]?.id;
+
+                // Si la sucursal no tiene caja física, bloqueamos la entrada educativamente
+                if (!cajaId) {
+                    throw new Error("El administrador debe abrir primero la Caja Principal de esta Sucursal desde su panel u otorgarte una caja válida.");
+                }
 
                 const { value: monto } = await Swal.fire({
                     title: "Apertura de Caja",
@@ -136,7 +155,7 @@ export const POS = () => {
 
                 cajaAbierta = await CajaService.abrirCaja({
                     id_usuario: usuarioData.id,
-                    id_caja: bData?.id || 1,
+                    id_caja: cajaId,
                     id_empresa: empId,
                     monto_inicial: parseFloat(monto) || 0
                 });
@@ -224,7 +243,7 @@ export const POS = () => {
                     </CerrarCajaBtn>
                     
                     {/* Indicador Offline */}
-                    <ConnectionBadge isOnline={isOnline}>
+                    <ConnectionBadge $isOnline={isOnline}>
                         <Icon icon={isOnline ? "mdi:wifi" : "mdi:wifi-off"} />
                         {isOnline ? "En Línea" : "Sin Conexión"}
                     </ConnectionBadge>
@@ -340,9 +359,9 @@ const ConnectionBadge = styled.div`
     border-radius: 20px;
     font-size: 12px;
     font-weight: 800;
-    background: ${({ isOnline }) => isOnline ? "#2ecc7122" : "#e74c3c22"};
-    color: ${({ isOnline }) => isOnline ? "#2ecc71" : "#e74c3c"};
-    border: 1px solid ${({ isOnline }) => isOnline ? "#2ecc7144" : "#e74c3c44"};
+    background: ${({ $isOnline }) => $isOnline ? "#2ecc7122" : "#e74c3c22"};
+    color: ${({ $isOnline }) => $isOnline ? "#2ecc71" : "#e74c3c"};
+    border: 1px solid ${({ $isOnline }) => $isOnline ? "#2ecc7144" : "#e74c3c44"};
 `;
 
 const SyncBtn = styled.button`

@@ -7,6 +7,7 @@ import { AlmacenService } from "../services/AlmacenService";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { supabase } from "../supabase";
 
 export const Sucursales = () => {
     const { user } = useAuthStore();
@@ -63,14 +64,13 @@ export const Sucursales = () => {
                 return;
             }
 
-            // Obtener almacenes de la empresa que no tengan sucursal asignada
+            // Obtener todos los almacenes de la empresa
             const allAlmacenes = await AlmacenService.getAlmacenesByEmpresa(empresa.id);
-            const availableAlmacenes = allAlmacenes.filter(a => !a.id_sucursal);
 
-            if (availableAlmacenes.length === 0) {
+            if (allAlmacenes.length === 0) {
                 const { isConfirmed } = await Swal.fire({
                     title: "Almacén Requerido",
-                    text: "Para crear una sucursal, primero debes tener un almacén libre (sin sucursal asignada) en el Maestro de Almacenes.",
+                    text: "No existe ningún almacén en tu empresa. Por favor, crea uno primero.",
                     icon: "info",
                     confirmButtonText: "Ir a Almacenes",
                     showCancelButton: true,
@@ -94,10 +94,10 @@ export const Sucursales = () => {
                         
                         <label style="font-weight: bold; font-size: 14px; margin-top: 15px; display: block;">Vincular Almacén</label>
                         <select id="swal-select-alm" class="swal2-input" style="margin-top: 5px; width: 100%; box-sizing: border-box;">
-                            <option value="">-- Seleccionar almacén disponible --</option>
-                            ${availableAlmacenes.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('')}
+                            <option value="">-- Seleccionar almacén --</option>
+                            ${allAlmacenes.map(a => `<option value="${a.id}">${a.nombre} ${a.id_sucursal ? '(Compartido)' : '(Libre)'}</option>`).join('')}
                         </select>
-                        <p style="font-size: 12px; color: #666; margin-top: 5px;">Cada sucursal debe tener un almacén asignado para el stock.</p>
+                        <p style="font-size: 12px; color: #666; margin-top: 5px;">Puedes crear una sucursal única o compartir el mismo almacén.</p>
                     </div>
                 `,
                 focusConfirm: false,
@@ -128,17 +128,35 @@ export const Sucursales = () => {
                 });
 
                 if (nuevaSucursal) {
-                    // Actualizar el almacén con el ID de la nueva sucursal
-                    await AlmacenService.updateAlmacen(formValues[2], {
-                        id_sucursal: nuevaSucursal.id
+                    // AUTO-CREAR CAJA: El Admin sí tiene los permisos RLS necesarios
+                    const { error: errorCaja } = await supabase.from("caja").insert({
+                        nombre: "Caja Principal " + formValues[0],
+                        id_sucursal: nuevaSucursal.id,
+                        id_empresa: empresa.id
                     });
-                    toast.success("Sucursal y almacén vinculados exitosamente");
+                    
+                    if (errorCaja) {
+                        toast.error("Advertencia: No se pudo auto-crear la Caja Registradora para esta sucursal. Error DB: " + errorCaja.message);
+                    }
+
+                    const chosenAlmacen = allAlmacenes.find(a => a.id == formValues[2]);
+                    
+                    // Si el almacén estaba libre, lo adjudica a esta sucursal en su tabla
+                    if (chosenAlmacen && !chosenAlmacen.id_sucursal) {
+                        await AlmacenService.updateAlmacen(formValues[2], {
+                            id_sucursal: nuevaSucursal.id
+                        });
+                        toast.success("Sucursal creada, caja instalada y almacén vinculado como principal.");
+                    } else {
+                        // Si ya tenía dueño, simplemente deja a la sucursal lista para usar el fallback del producto
+                        toast.success("Sucursal creada y caja instalada compartiendo el almacén existente.");
+                    }
                 }
 
                 fetchData();
             }
         } catch (error) {
-            toast.error("Error al agregar sucursal");
+            toast.error("Error al agregar sucursal: " + (error.message || ""));
         }
     };
 
@@ -171,6 +189,27 @@ export const Sucursales = () => {
         }
     };
 
+    const handleDelete = async (sucursal) => {
+        const { isConfirmed } = await Swal.fire({
+            title: '¿Seguro?',
+            text: "Vas a eliminar esta sucursal.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ff5e57',
+            confirmButtonText: 'Sí, eliminar'
+        });
+
+        if (isConfirmed) {
+            try {
+                await SucursalService.deleteSucursal(sucursal.id);
+                toast.success("Sucursal eliminada");
+                fetchData();
+            } catch (error) {
+                toast.error("No se pudo eliminar. Primero debes quitar los usuarios o datos vinculados.");
+            }
+        }
+    };
+
     return (
         <Container>
             <header>
@@ -187,13 +226,15 @@ export const Sucursales = () => {
             </PlanInfo>
 
             <Grid>
-                {sucursales.map(s => (
+                {sucursales.map((s, idx) => (
                     <Card key={s.id} className="glass animate-scale">
                         <h3>{s.nombre}</h3>
                         <p>📍 {s.direccion || "Sin dirección"}</p>
                         <Actions>
                             <button title="Editar Sucursal" onClick={() => handleEdit(s)}>✏️</button>
-                            {/* Eliminación deshabilitada por seguridad según pedido del usuario */}
+                            {idx > 0 && (
+                                <button className="del" title="Eliminar Sucursal" onClick={() => handleDelete(s)}>🗑️</button>
+                            )}
                         </Actions>
                     </Card>
                 ))}
