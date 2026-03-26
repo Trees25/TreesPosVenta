@@ -121,7 +121,8 @@ export const ModalCobro = ({ onVentaExitosa, onClose, idEmpresa, idUsuario, idCa
                     }))
             };
 
-            const idVenta = await VentaService.procesarVenta(ventaData);
+            const response = await VentaService.procesarVenta(ventaData);
+            const idVenta = response.id_venta;
             toast.success("Venta finalizada correctamente");
 
             // Preparar para impresión real (Si hubo ID real)
@@ -177,10 +178,10 @@ export const ModalCobro = ({ onVentaExitosa, onClose, idEmpresa, idUsuario, idCa
                     <div className="no-print">
                         <div style={{ fontSize: '50px' }}>✅</div>
                         <h2>¡Venta Exitosa!</h2>
-                        <p>El comprobante <strong>{saleSuccess.venta.numero_comprobante}</strong> ha sido generado.</p>
+                        <p>El comprobante <strong>{saleSuccess.venta?.numero_comprobante || 'Generando...'}</strong> ha sido generado.</p>
                     </div>
 
-                    {saleSuccess && createPortal(
+                    {saleSuccess && saleSuccess.venta && createPortal(
                         <div id="comprobante-print-container" className="only-print">
                             <ComprobantePrint
                                 venta={saleSuccess.venta}

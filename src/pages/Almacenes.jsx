@@ -61,11 +61,6 @@ export const Almacenes = () => {
             return;
         }
 
-        if (sucursales.length === 0) {
-            toast.error("Debes crear al menos una sucursal primero");
-            return;
-        }
-
         const { value: formValues } = await Swal.fire({
             title: 'Nuevo Almacén',
             html: `
@@ -73,11 +68,12 @@ export const Almacenes = () => {
                     <label style="font-weight: bold; font-size: 14px;">Nombre del Almacén</label>
                     <input id="alm-nombre" class="swal2-input" placeholder="Ej: Depósito Central, Salón Ventas..." style="margin-top: 5px;">
                     
-                    <label style="font-weight: bold; font-size: 14px; margin-top: 15px; display: block;">Sucursal Asociada</label>
+                    <label style="font-weight: bold; font-size: 14px; margin-top: 15px; display: block;">Sucursal Asociada (Opcional)</label>
                     <select id="alm-sucursal" class="swal2-input" style="margin-top: 5px; width: 100%; box-sizing: border-box;">
                         <option value="">-- Sin asignar sucursal --</option>
                         ${sucursales.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('')}
                     </select>
+                    <p style="font-size: 12px; color: #666; margin-top: 5px;">Si no tienes sucursales, puedes crear una después en la sección de Sucursales.</p>
                 </div>
             `,
             focusConfirm: false,

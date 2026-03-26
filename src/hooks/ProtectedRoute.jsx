@@ -40,16 +40,17 @@ export const ProtectedRoute = ({ children, accessBy, module }) => {
             return <Navigate to="/" />;
         }
 
-        // Validación de suscripción para Administradores
-        if (profile?.id_rol === 1) {
-            const diasRestantes = profile.suscripcion?.dias_restantes;
-            // Bloqueo total (Suspensión) solo tras 30 días de mora
-            const isSuspended = diasRestantes !== undefined && diasRestantes < -30;
-            const allowedPaths = ["/planes", "/mi-perfil", "/onboarding"];
+        // Validación de suscripción para todos los usuarios de la empresa
+        const diasRestantes = profile?.suscripcion?.dias_restantes;
+        
+        // Bloqueo total (Suspensión) tras 30 días de mora
+        const isSuspended = diasRestantes !== undefined && diasRestantes < -30;
+        const allowedPaths = ["/planes", "/mi-perfil", "/onboarding"];
 
-            if (isSuspended && !allowedPaths.includes(location.pathname)) {
-                return <Navigate to="/planes?suspended=true" />;
-            }
+        if (isSuspended && !allowedPaths.includes(location.pathname)) {
+            // Solo los admins pueden acceder a la vista de planes para pagar,
+            // A los cajeros podríamos mandarlos a un "/planes?suspended=true" que muestre un aviso general.
+            return <Navigate to="/planes?suspended=true" />;
         }
 
         // Si se requiere un módulo específico, validar permisos

@@ -112,15 +112,17 @@ export const POS = () => {
             
             // LA MAGIA ESTABA AQUÍ: El sistema priorizaba empresas fantasmas autogeneradas (eData.id) 
             // sobre el id_empresa real y legítimo que le delegó el Administrador (usuarioData.id_empresa).
-            const empId = usuarioData?.id_empresa || eData?.id;
+            // 1. Obtener la ID de empresa de la forma más fiable (igual que en MiPerfil.jsx)
+            const empId = profile?.id_empresa || profile?.empresa?.id || usuarioData?.id_empresa || eData?.id;
             
             if (!empId) {
+                console.error("DEBUG POS: No se pudo determinar empId", { profile, usuarioData, eData });
                 toast.error("Error: Tu perfil de empleado no tiene compañía asignada.");
                 setLoading(false);
                 return;
             }
             
-            setEmpresa(eData || { id: empId });
+            setEmpresa({ id: empId });
 
             // 1. Saneamiento: Cerrar cajas huérfanas (>24hs) antes de chequear
             await supabase.rpc("cerrar_cajas_huerfanas", { p_id_usuario: usuarioData.id });
@@ -129,12 +131,15 @@ export const POS = () => {
             let cajaAbierta = await CajaService.obtenerCajaAbierta(usuarioData.id);
 
             if (!cajaAbierta) {
-                // Obtener una caja física disponible para la sucursal específica del usuario
-                const { data: cajas } = await supabase.from("caja")
-                                    .select("id")
-                                    .eq("id_sucursal", usuarioData.id_sucursal)
-                                    .limit(1);
+                // Obtener una caja física disponible (Priorizamos sucursal del usuario, fallback a cualquier caja de la empresa)
+                let queryCaja = supabase.from("caja").select("id").limit(1);
+                if (usuarioData.id_sucursal) {
+                    queryCaja = queryCaja.eq("id_sucursal", usuarioData.id_sucursal);
+                } else {
+                    queryCaja = queryCaja.eq("id_empresa", empId);
+                }
                 
+                const { data: cajas } = await queryCaja;
                 let cajaId = cajas?.[0]?.id;
 
                 // Si la sucursal no tiene caja física, bloqueamos la entrada educativamente

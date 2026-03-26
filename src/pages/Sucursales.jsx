@@ -67,21 +67,6 @@ export const Sucursales = () => {
             // Obtener todos los almacenes de la empresa
             const allAlmacenes = await AlmacenService.getAlmacenesByEmpresa(empresa.id);
 
-            if (allAlmacenes.length === 0) {
-                const { isConfirmed } = await Swal.fire({
-                    title: "Almacén Requerido",
-                    text: "No existe ningún almacén en tu empresa. Por favor, crea uno primero.",
-                    icon: "info",
-                    confirmButtonText: "Ir a Almacenes",
-                    showCancelButton: true,
-                });
-
-                if (isConfirmed) {
-                    navigate("/inventario/almacenes");
-                }
-                return;
-            }
-
             const { value: formValues } = await Swal.fire({
                 title: 'Nueva Sucursal',
                 html: `
@@ -92,30 +77,25 @@ export const Sucursales = () => {
                         <label style="font-weight: bold; font-size: 14px; margin-top: 15px; display: block;">Dirección</label>
                         <input id="swal-input2" class="swal2-input" placeholder="Ej: Av. Siempreviva 123" style="margin-top: 5px; width: 100%; box-sizing: border-box;">
                         
-                        <label style="font-weight: bold; font-size: 14px; margin-top: 15px; display: block;">Vincular Almacén</label>
+                        <label style="font-weight: bold; font-size: 14px; margin-top: 15px; display: block;">Vincular Almacén (Opcional)</label>
                         <select id="swal-select-alm" class="swal2-input" style="margin-top: 5px; width: 100%; box-sizing: border-box;">
-                            <option value="">-- Seleccionar almacén --</option>
+                            <option value="">-- Sin almacén vinculado --</option>
                             ${allAlmacenes.map(a => `<option value="${a.id}">${a.nombre} ${a.id_sucursal ? '(Compartido)' : '(Libre)'}</option>`).join('')}
                         </select>
-                        <p style="font-size: 12px; color: #666; margin-top: 5px;">Puedes crear una sucursal única o compartir el mismo almacén.</p>
+                        <p style="font-size: 12px; color: #666; margin-top: 5px;">Si no tienes almacenes, puedes crear uno después en la sección de Inventario.</p>
                     </div>
                 `,
                 focusConfirm: false,
                 preConfirm: () => {
                     const nombre = document.getElementById('swal-input1').value;
-                    const idAlmacen = document.getElementById('swal-select-alm').value;
                     if (!nombre) {
                         Swal.showValidationMessage('El nombre es obligatorio');
-                        return false;
-                    }
-                    if (!idAlmacen) {
-                        Swal.showValidationMessage('Debes seleccionar un almacén');
                         return false;
                     }
                     return [
                         nombre,
                         document.getElementById('swal-input2').value,
-                        idAlmacen
+                        document.getElementById('swal-select-alm').value
                     ];
                 }
             });

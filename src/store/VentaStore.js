@@ -45,8 +45,8 @@ export const useVentaStore = create((set, get) => ({
             if (item.id === id) {
                 return {
                     ...item,
-                    cantidad: Math.max(1, cantidad),
-                    total: Math.max(1, cantidad) * item.precio_venta,
+                    cantidad: Math.min(Math.max(1, cantidad), 9999),
+                    total: Math.min(Math.max(1, cantidad), 9999) * item.precio_venta,
                 };
             }
             return item;
