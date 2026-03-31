@@ -76,6 +76,7 @@ export const Home = () => {
           <span>Trees</span> PosVenta
         </Logo>
         <NavActions>
+          <HelpLink href="https://screeching-magician-d39.notion.site/Manual-de-Usuario-Sistema-POS-Ventas-334a3624868a8095b394fd95ba52ded5?pvs=74" target="_blank" title="Manual de Ayuda">❓</HelpLink>
           <Link to="/mi-perfil" style={{ fontSize: "20px" }}>👤</Link>
           <ThemeToggle onClick={toggleTheme}>
             {theme === "light" ? "🌙" : "☀️"}
@@ -117,6 +118,15 @@ export const Home = () => {
         <NextSteps className="animate-up" style={{ animationDelay: "0.3s" }}>
           <h2>Análisis y Operaciones</h2>
           <StepList>
+            <a href="https://screeching-magician-d39.notion.site/Manual-de-Usuario-Sistema-POS-Ventas-334a3624868a8095b394fd95ba52ded5?pvs=74" target="_blank" style={{ textDecoration: 'none' }}>
+              <StepItem className="premium" style={{ background: 'rgba(255, 106, 0, 0.1)', border: '1px solid #ff6a0044' }}>
+                <div className="icon">📖</div>
+                <div>
+                  <h4 style={{ color: '#ff6a00' }}>Manual de Usuario</h4>
+                  <p>Guía completa y videos en Notion.</p>
+                </div>
+              </StepItem>
+            </a>
             {profile?.id_rol === 1 && (
               <div onClick={() => handleNavigation("/reporte-ventas")} style={{ cursor: 'pointer' }}>
                 <StepItem className="premium">
@@ -317,6 +327,23 @@ const NavActions = styled.div`
   display: flex;
   gap: 15px;
   align-items: center;
+`;
+
+const HelpLink = styled.a`
+  background: ${({ theme }) => theme.softBg};
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  transition: all 0.2s;
+  &:hover {
+    background: ${({ theme }) => theme.primary}22;
+    transform: scale(1.1);
+  }
 `;
 
 const ThemeToggle = styled.button`
