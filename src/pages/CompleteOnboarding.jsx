@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/AuthStore";
+import { OnboardingService } from "../services/OnboardingService";
 
 export const CompleteOnboarding = () => {
     const [loading, setLoading] = useState(false);
@@ -33,8 +34,13 @@ export const CompleteOnboarding = () => {
 
             if (error) throw error;
 
-            toast.success("¡Empresa creada con éxito! Configurando tu entorno...");
+            toast.info("Configurando tu infraestructura base...");
             
+            // Inicializar Sucursal, Almacen, Caja, etc.
+            await OnboardingService.initializeInfrastructure(user.id, data.nombreNegocio);
+
+            toast.success("¡Todo listo! Bienvenido a tu nuevo sistema.");
+
             // Recargar la página para que el App.jsx detecte el nuevo perfil completo
             window.location.href = "/";
         } catch (error) {

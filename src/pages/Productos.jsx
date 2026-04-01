@@ -25,6 +25,7 @@ export const Productos = () => {
     const [editingId, setEditingId] = useState(null);
     const [proveedores, setProveedores] = useState([]);
     const [showMassiveModal, setShowMassiveModal] = useState(false);
+    const [lastFile, setLastFile] = useState(null); // Para evitar duplicados
     const { register, handleSubmit, reset, setValue } = useForm();
 
     useEffect(() => {
@@ -175,6 +176,19 @@ export const Productos = () => {
         const file = e.target.files[0];
         if (!file) return;
 
+        // 1. Verificar duplicado
+        if (lastFile && lastFile.name === file.name && lastFile.size === file.size) {
+            const confirmDup = await Swal.fire({
+                title: "¿Subir mismo archivo?",
+                text: "Parece que ya subiste este archivo recientemente. ¿Deseas procesarlo de nuevo?",
+                icon: "info",
+                showCancelButton: true,
+                confirmButtonText: "Sí, subir",
+                cancelButtonText: "Cancelar"
+            });
+            if (!confirmDup.isConfirmed) return;
+        }
+
         const reader = new FileReader();
         reader.onload = async (event) => {
             try {
@@ -190,16 +204,14 @@ export const Productos = () => {
                 if (empresaId) {
                     try {
                         const almacenes = await AlmacenService.getAlmacenesByEmpresa(empresaId);
-                        // Simplificación: Agarra el almacén de la sucursal o, si no existe o es una sola, agarra el primer almacén principal de la empresa.
                         const userAlmacen = almacenes.find(a => a.id_sucursal == profile?.id_sucursal) || almacenes[0];
                         if (userAlmacen) userAlmacenId = userAlmacen.id;
                     } catch (e) { console.error("Error obteniendo el almacén:", e); }
                 }
 
-                // Detectar delimitador (coma o punto y coma)
+                // Detectar delimitador
                 const firstLine = lines[0];
                 const delimiter = firstLine.includes(";") ? ";" : ",";
-
                 const headers = firstLine.split(delimiter).map(h =>
                     h.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_')
                 );
@@ -210,34 +222,67 @@ export const Productos = () => {
                     headers.forEach((header, i) => {
                         obj[header] = values[i]?.trim();
                     });
-                    
-                    // Añadir referencias al objeto explícitamente para que la RPC las lea
                     obj.id_sucursal = profile?.id_sucursal;
                     obj.id_usuario = profile?.id;
-                    if (userAlmacenId) {
-                        obj.id_almacen = userAlmacenId;
-                        obj.almacen_id = userAlmacenId; // Por si la db usa este nombre
-                    }
-                    
                     return obj;
                 });
 
                 if (empresaId) {
-                    setLoading(true);
-                    try {
-                        if (!userAlmacenId) {
-                            throw new Error("No pudimos detectar a qué almacén físico pertenece tu sucursal. Revisa tu configuración.");
+                    // 2. Pre-validación de categorías
+                    const csvCategories = [...new Set(data.map(item => item.categoria?.trim()).filter(c => c))];
+                    const missingCategories = csvCategories.filter(catName => 
+                        !categorias.find(c => c.nombre?.toLowerCase() === catName.toLowerCase())
+                    );
+
+                    if (missingCategories.length > 0) {
+                        const confirmCreate = await Swal.fire({
+                            title: "Categorías no encontradas",
+                            html: `Las siguientes categorías no existen: <br/><b>${missingCategories.join(', ')}</b><br/><br/>¿Deseas crearlas automáticamente para continuar?`,
+                            icon: "question",
+                            showCancelButton: true,
+                            confirmButtonText: "Sí, crearlas y seguir",
+                            cancelButtonText: "Abortar carga"
+                        });
+
+                        if (!confirmCreate.isConfirmed) return;
+
+                        // Crear categorías faltantes
+                        for (const catName of missingCategories) {
+                            try {
+                                await CategoriaService.insertarCategoria({ nombre: catName, id_empresa: empresaId });
+                            } catch (err) {
+                                console.error("Error creando categoría:", catName, err);
+                            }
                         }
+                        // Actualizar lista local de categorías antes de seguir
+                        const updatedCats = await CategoriaService.listarCategorias(empresaId);
+                        setCategorias(updatedCats);
+                        // Refrescar variable local para el bucle de productos
+                        var currentCategorias = updatedCats;
+                    } else {
+                        var currentCategorias = categorias;
+                    }
+
+                    // 3. Iniciar carga con cartel de "Cargando"
+                    Swal.fire({
+                        title: 'Importando productos...',
+                        html: 'Por favor espera mientras procesamos los datos.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    try {
+                        if (!userAlmacenId) throw new Error("No pudimos detectar tu almacén físico.");
 
                         let insertados = 0;
                         let actualizados = 0;
                         for (const item of data) {
-                            if (!item.nombre) continue; // Saltar si no hay nombre
+                            if (!item.nombre) continue;
                             
-                            // Buscar id de categoría por nombre, ignorando mayúsculas/minúsculas
                             const catName = item.categoria?.trim()?.toLowerCase();
-                            const catObj = categorias.find(c => c.nombre?.toLowerCase() === catName);
-                            // También buscamos el proveedor si estuviese
+                            const catObj = (currentCategorias || categorias).find(c => c.nombre?.toLowerCase() === catName);
                             const provName = item.proveedor?.trim()?.toLowerCase();
                             const provObj = proveedores.find(p => p.nombres?.toLowerCase() === provName);
                             
@@ -263,7 +308,6 @@ export const Productos = () => {
                                 id_usuario: profile?.id
                             };
                             
-                            // Búsqueda de duplicados para Upsert
                             let existingProduct = null;
                             if (codigo_barras || codigo_interno) {
                                 let query = supabase.from('productos').select('id').eq('id_empresa', empresaId);
@@ -271,72 +315,44 @@ export const Productos = () => {
                                 else if (codigo_interno) query = query.eq('codigo_interno', codigo_interno);
                                 
                                 const { data: checkData } = await query.limit(1);
-                                if (checkData && checkData.length > 0) {
-                                    existingProduct = checkData[0];
-                                }
+                                if (checkData && checkData.length > 0) existingProduct = checkData[0];
                             }
                             
                             if (existingProduct) {
-                                // 1. Update producto (limpiando campos que no son de la tabla)
                                 const { stock_inicial, stock_minimo, id_usuario, id_sucursal, maneja_inventarios, ...updatePayload } = payload;
-                                const { error: updErr } = await supabase.from('productos').update(updatePayload).eq('id', existingProduct.id);
-                                if (updErr) throw new Error("Fallo actualizando producto: " + updErr.message);
+                                await supabase.from('productos').update(updatePayload).eq('id', existingProduct.id);
 
-                                // 2. OVERWRITE Stock if user provided it in CSV
                                 if (typeof item.stock_inicial !== 'undefined' && item.stock_inicial !== '') {
                                     const parsedStock = parseFloat(item.stock_inicial) || 0;
-                                    const parsedMinimo = parseFloat(item.stock_minimo) || 0;
-                                    
-                                    const { data: currentStockRows } = await supabase.from('stock')
-                                        .select('id')
-                                        .eq('id_producto', existingProduct.id)
-                                        .eq('id_almacen', userAlmacenId);
+                                    const { data: currentStockRows } = await supabase.from('stock').select('id').eq('id_producto', existingProduct.id).eq('id_almacen', userAlmacenId);
                                     
                                     if (currentStockRows && currentStockRows.length > 0) {
-                                        const { error: stockUpdErr } = await supabase.from('stock').update({ stock: parsedStock }).eq('id', currentStockRows[0].id);
-                                        if (stockUpdErr) throw new Error("Fallo actualizando inventario: " + stockUpdErr.message);
+                                        await supabase.from('stock').update({ stock: parsedStock }).eq('id', currentStockRows[0].id);
                                     } else {
-                                        const { error: stockInsErr } = await supabase.from('stock').insert({
-                                            id_producto: existingProduct.id,
-                                            id_almacen: userAlmacenId,
-                                            stock: parsedStock,
-                                            stock_minimo: parsedMinimo
-                                        });
-                                        if (stockInsErr) throw new Error("Fallo creando inventario: " + stockInsErr.message);
+                                        await supabase.from('stock').insert({ id_producto: existingProduct.id, id_almacen: userAlmacenId, stock: parsedStock, stock_minimo: parseFloat(item.stock_minimo) || 0 });
                                     }
                                 }
                                 actualizados++;
                             } else {
-                                // 1. Insert producto directamente a la tabla
                                 const { stock_inicial, stock_minimo, id_usuario, id_sucursal, maneja_inventarios, ...cleanPayload } = payload;
-                                const { data: directData, error: directError } = await supabase
-                                    .from("productos")
-                                    .insert(cleanPayload)
-                                    .select();
-                                
+                                const { data: directData, error: directError } = await supabase.from("productos").insert(cleanPayload).select();
                                 if (directError) throw directError;
                                 const nuevoPro = directData[0];
 
-                                // 2. Insertar stock exacto al almacén del usuario activo
                                 if (nuevoPro) {
-                                    const { error: stockInsErr } = await supabase.from('stock').insert({
-                                        id_producto: nuevoPro.id,
-                                        id_almacen: userAlmacenId,
-                                        stock: parseFloat(item.stock_inicial) || 0,
-                                        stock_minimo: parseFloat(item.stock_minimo) || 0
-                                    });
-                                    if (stockInsErr) throw new Error("Fallo guardando stock inicial del producto nuevo: " + stockInsErr.message);
+                                    await supabase.from('stock').insert({ id_producto: nuevoPro.id, id_almacen: userAlmacenId, stock: parseFloat(item.stock_inicial) || 0, stock_minimo: parseFloat(item.stock_minimo) || 0 });
                                 }
                                 insertados++;
                             }
                         }
+                        Swal.close();
+                        setLastFile({ name: file.name, size: file.size });
                         toast.success(`Importación finalizada: ${insertados} insertados y ${actualizados} actualizados.`);
                         fetchData();
                     } catch (error) {
+                        Swal.close();
                         console.error("Error importando:", error);
                         toast.error(`Ocurrió un error en la importación: ${error.message || ''}`);
-                    } finally {
-                        setLoading(false);
                     }
                 }
             } catch (error) {
@@ -345,6 +361,7 @@ export const Productos = () => {
             }
         };
         reader.readAsText(file);
+        e.target.value = null; // Limpiar input para permitir re-seleccionar
     };
 
     const filteredProductos = productos.filter(p =>
@@ -614,10 +631,94 @@ export const Productos = () => {
 
 const Container = styled.div` padding: 40px 5%; `;
 const HomeBtn = styled(Link)` background: ${({ theme }) => theme.softBg}; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid ${({ theme }) => theme.borderColor}44; text-decoration: none; font-size: 20px; transition: all 0.2s; &:hover { background: ${({ theme }) => theme.primary}22; border-color: ${({ theme }) => theme.primary}; transform: scale(1.05); } `;
-const Header = styled.div` display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; gap: 20px; @media (max-width: 768px) { flex-direction: column; align-items: flex-start; } .title-area { h1 { margin: 0; font-size: 28px; font-weight: 900; } p { margin: 5px 0 0; color: ${({ theme }) => theme.text}66; font-size: 14px; font-weight: 600; } } .actions-area { display: flex; gap: 15px; flex: 1; justify-content: flex-end; width: 100%; } `;
-const SearchBox = styled.div` display: flex; align-items: center; gap: 12px; padding: 0 20px; background: ${({ theme }) => theme.softBg}; border: 1px solid ${({ theme }) => theme.borderColor}44; border-radius: 16px; flex: 1; max-width: 500px; height: 50px; span { font-size: 18px; filter: grayscale(1); } input { background: transparent; border: none; color: ${({ theme }) => theme.text}; font-size: 14px; width: 100%; font-weight: 600; &:focus { outline: none; } &::placeholder { color: ${({ theme }) => theme.text}44; } } `;
-const AddBtn = styled.button` background: ${({ theme }) => theme.primary}; color: white; padding: 0 30px; border-radius: 16px; font-weight: 800; font-size: 14px; height: 50px; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 10px 20px ${({ theme }) => theme.primary}33; &:hover { transform: translateY(-2px); box-shadow: 0 15px 30px ${({ theme }) => theme.primary}55; } `;
-const SecondaryBtn = styled.button` background: ${({ theme }) => theme.softBg}; color: ${({ theme }) => theme.text}; padding: 0 20px; border-radius: 16px; font-weight: 800; font-size: 13px; height: 50px; border: 1px solid ${({ theme }) => theme.borderColor}44; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; &:hover { background: ${({ theme }) => theme.primary}11; border-color: ${({ theme }) => theme.primary}; } `;
+const Header = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    gap: 20px;
+    
+    @media (max-width: 900px) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 25px;
+    }
+
+    .title-area {
+        h1 { margin: 0; font-size: 28px; font-weight: 900; }
+        p { margin: 5px 0 0; color: ${({ theme }) => theme.text}66; font-size: 14px; font-weight: 600; }
+    }
+
+    .actions-area {
+        display: flex;
+        gap: 12px;
+        flex: 1;
+        justify-content: flex-end;
+        width: 100%;
+        flex-wrap: wrap;
+
+        @media (max-width: 900px) {
+            justify-content: flex-start;
+        }
+    }
+`;
+const SearchBox = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    background: ${({ theme }) => theme.softBg};
+    border: 1px solid ${({ theme }) => theme.borderColor}44;
+    border-radius: 16px;
+    flex: 1;
+    min-width: 280px;
+    max-width: 500px;
+    height: 50px;
+    span { font-size: 18px; filter: grayscale(1); }
+    input {
+        background: transparent;
+        border: none;
+        color: ${({ theme }) => theme.text};
+        font-size: 14px;
+        width: 100%;
+        font-weight: 600;
+        &:focus { outline: none; }
+        &::placeholder { color: ${({ theme }) => theme.text}44; }
+    }
+`;
+const AddBtn = styled.button`
+    background: ${({ theme }) => theme.primary};
+    color: white;
+    padding: 0 25px;
+    border-radius: 16px;
+    font-weight: 800;
+    font-size: 13px;
+    height: 50px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 10px 20px ${({ theme }) => theme.primary}33;
+    white-space: nowrap;
+    &:hover { transform: translateY(-2px); box-shadow: 0 15px 30px ${({ theme }) => theme.primary}55; }
+    @media (max-width: 480px) { width: 100%; }
+`;
+const SecondaryBtn = styled.button`
+    background: ${({ theme }) => theme.softBg};
+    color: ${({ theme }) => theme.text};
+    padding: 0 15px;
+    border-radius: 16px;
+    font-weight: 800;
+    font-size: 12px;
+    height: 50px;
+    border: 1px solid ${({ theme }) => theme.borderColor}44;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    &:hover { background: ${({ theme }) => theme.primary}11; border-color: ${({ theme }) => theme.primary}; }
+`;
 const TableContainer = styled.div` background: ${({ theme }) => theme.cardBg}; border: 1px solid ${({ theme }) => theme.borderColor}33; border-radius: 24px; overflow: hidden; &.blur { backdrop-filter: blur(20px); } `;
 const Table = styled.table` width: 100%; border-collapse: collapse; th { text-align: left; padding: 22px 25px; background: ${({ theme }) => theme.softBg}44; font-size: 12px; color: ${({ theme }) => theme.text}66; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; } td { padding: 22px 25px; border-bottom: 1px solid ${({ theme }) => theme.borderColor}11; } tr.animate-fade { animation: fadeIn 0.3s ease-out; } @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } } `;
 const ProdInfo = styled.div` .name { font-weight: 700; color: ${({ theme }) => theme.text}; } .sku { font-size: 11px; color: ${({ theme }) => theme.primary}; font-family: monospace; font-weight: 700; text-transform: uppercase; } `;
@@ -664,7 +765,14 @@ const Modal = styled.div`
     background-color: ${({ theme }) => theme.primary};
   }
 `;
-const FormGrid = styled.div` display: grid; grid-template-columns: 1fr 1fr; gap: 20px; `;
+const FormGrid = styled.div`
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    @media (max-width: 600px) {
+        grid-template-columns: 1fr;
+    }
+`;
 const InputGroup = styled.div` display: flex; flex-direction: column; gap: 8px; label { font-size: 13px; font-weight: 600; } input, select { background: ${({ theme }) => theme.softBg}; border: 1px solid ${({ theme }) => theme.borderColor}; padding: 12px; border-radius: 8px; color: ${({ theme }) => theme.text}; } `;
 const ModalActions = styled.div` display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; button { padding: 12px 24px; border-radius: 12px; font-weight: 600; &.primary { background: ${({ theme }) => theme.primary}; color: white; } } `;
 

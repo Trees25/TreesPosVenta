@@ -6,6 +6,7 @@ export const ProductoService = {
             .from("productos")
             .select("*, categorias(nombre), stock(stock, stock_minimo, id_almacen, almacen(id_sucursal, nombre, sucursales(nombre)))")
             .eq("id_empresa", idEmpresa)
+            .eq("activo", true)
             .order("nombre", { ascending: true });
 
         if (error) throw error;
@@ -73,7 +74,7 @@ export const ProductoService = {
     eliminarProducto: async (id) => {
         const { error } = await supabase
             .from("productos")
-            .delete()
+            .update({ activo: false })
             .eq("id", id);
         if (error) throw error;
     },

@@ -236,34 +236,39 @@ export const POS = () => {
         p.codigo_barras?.includes(filtro)
     );
 
+    const [showMobileCart, setShowMobileCart] = useState(false);
+
     if (loading) return <LoadingContainer>Cargando POS...</LoadingContainer>;
 
     return (
         <POSContainer>
-            <ProductsSection className="animate-fade">
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px' }}>
-                    <HomeBtn to="/">🏠</HomeBtn>
-                    <CerrarCajaBtn onClick={handleCerrarCaja}>
-                        <Icon icon="mdi:lock-outline" /> Cerrar Caja
-                    </CerrarCajaBtn>
+            <ProductsSection className="animate-fade" $hideOnMobile={showMobileCart}>
+                <div className="header-actions">
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <HomeBtn to="/">🏠</HomeBtn>
+                        <CerrarCajaBtn onClick={handleCerrarCaja}>
+                            <Icon icon="mdi:lock-outline" /> <span className="text">Cerrar Caja</span>
+                        </CerrarCajaBtn>
+                    </div>
                     
-                    {/* Indicador Offline */}
-                    <ConnectionBadge $isOnline={isOnline}>
-                        <Icon icon={isOnline ? "mdi:wifi" : "mdi:wifi-off"} />
-                        {isOnline ? "En Línea" : "Sin Conexión"}
-                    </ConnectionBadge>
+                    <div className="status-group">
+                        <ConnectionBadge $isOnline={isOnline}>
+                            <Icon icon={isOnline ? "mdi:wifi" : "mdi:wifi-off"} />
+                            <span className="text">{isOnline ? "En Línea" : "Sin Conexión"}</span>
+                        </ConnectionBadge>
 
-                    {ventasPendientes.length > 0 && (
-                        <SyncBtn onClick={sincronizarVentas} disabled={!isOnline || syncing}>
-                            <Icon icon={syncing ? "mdi:loading" : "mdi:sync"} className={syncing ? "animate-spin" : ""} />
-                            Sincronizar ({ventasPendientes.length})
-                        </SyncBtn>
-                    )}
+                        {ventasPendientes.length > 0 && (
+                            <SyncBtn onClick={sincronizarVentas} disabled={!isOnline || syncing}>
+                                <Icon icon={syncing ? "mdi:loading" : "mdi:sync"} className={syncing ? "animate-spin" : ""} />
+                                <span className="text">Sync ({ventasPendientes.length})</span>
+                            </SyncBtn>
+                        )}
+                    </div>
 
                     <SearchBox style={{ marginBottom: 0, flex: 1 }}>
                         <input
                             type="text"
-                            placeholder="Buscar por nombre o SKU..."
+                            placeholder="Buscar productos..."
                             value={filtro}
                             onChange={(e) => setFiltro(e.target.value)}
                         />
@@ -283,10 +288,23 @@ export const POS = () => {
                         </ProductCard>
                     ))}
                 </ProductsGrid>
+
+                <MobileCartBtn onClick={() => setShowMobileCart(true)} className="animate-up">
+                    <Icon icon="mdi:cart" />
+                    <span>Ver Carrito (${getTotal()})</span>
+                </MobileCartBtn>
             </ProductsSection>
 
-            <CartSection className="glass premium-shadow animate-up">
-                <h2>Carrito de Venta</h2>
+            <CartSection 
+                className="glass premium-shadow animate-up" 
+                $showOnMobile={showMobileCart}
+            >
+                <div className="cart-header">
+                    <h2>Carrito de Venta</h2>
+                    <button className="close-cart" onClick={() => setShowMobileCart(false)}>
+                        <Icon icon="mdi:close" />
+                    </button>
+                </div>
                 <CartItems>
                     {carrito.length === 0 ? (
                         <EmptyState>Agregue productos para comenzar</EmptyState>
@@ -340,49 +358,127 @@ export const POS = () => {
     );
 };
 
-const POSContainer = styled.div` display: grid; grid-template-columns: 1fr 400px; height: calc(100vh - 80px); gap: 20px; padding: 20px; `;
-const HomeBtn = styled(Link)` background: ${({ theme }) => theme.cardBg}; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid ${({ theme }) => theme.borderColor}44; text-decoration: none; font-size: 24px; transition: all 0.2s; &:hover { background: ${({ theme }) => theme.primary}22; border-color: ${({ theme }) => theme.primary}; transform: scale(1.05); } `;
-const CerrarCajaBtn = styled.button` background: #ff5e5711; color: #ff5e57; border: 1px solid #ff5e5733; padding: 0 20px; height: 55px; border-radius: 12px; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; &:hover { background: #ff5e57; color: white; transform: translateY(-2px); box-shadow: 0 8px 20px #ff5e5744; } `;
-const ProductsSection = styled.div` overflow-y: auto; padding-right: 10px; `;
-const SearchBox = styled.div` margin-bottom: 20px; input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid ${({ theme }) => theme.borderColor}; background: ${({ theme }) => theme.cardBg}; color: ${({ theme }) => theme.text}; font-size: 16px; } `;
-const ProductsGrid = styled.div` display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; `;
-const ProductCard = styled.div` background: ${({ theme }) => theme.cardBg}; padding: 20px; border-radius: 15px; cursor: pointer; transition: all 0.2s; &:hover { transform: translateY(-3px); border-color: ${({ theme }) => theme.primary}; } .name { font-weight: 700; margin-bottom: 5px; } .price { color: ${({ theme }) => theme.primary}; font-weight: 800; font-size: 18px; } .stock { font-size: 12px; color: ${({ theme }) => theme.text}66; margin-top: 5px; } `;
-const CartSection = styled.div` display: flex; flex-direction: column; background: ${({ theme }) => theme.cardBg}; border-radius: 20px; border: 1px solid ${({ theme }) => theme.borderColor}; padding: 25px; `;
-const CartItems = styled.div` flex: 1; overflow-y: auto; padding: 10px 0; `;
-const EmptyState = styled.div` text-align: center; color: ${({ theme }) => theme.text}44; margin-top: 100px; `;
-const CartItem = styled.div` display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid ${({ theme }) => theme.borderColor}; .details { .name { font-weight: 600; } .price { font-size: 14px; color: ${({ theme }) => theme.text}88; } } .actions { display: flex; align-items: center; gap: 8px; button { background: ${({ theme }) => theme.softBg}; width: 28px; height: 28px; border-radius: 8px; &.del { background: transparent; color: ${({ theme }) => theme.danger}; } } } `;
-const CartFooter = styled.div` margin-top: auto; padding-top: 20px; border-top: 2px solid ${({ theme }) => theme.borderColor}; `;
-const TotalRow = styled.div` display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; span { font-size: 18px; font-weight: 600; &.amount { font-size: 32px; font-weight: 900; color: ${({ theme }) => theme.primary}; } } `;
-const PayBtn = styled.button` width: 100%; background: ${({ theme }) => theme.primary}; color: white; padding: 18px; border-radius: 15px; font-size: 18px; font-weight: 800; box-shadow: 0 10px 20px ${({ theme }) => theme.primary}44; &:disabled { opacity: 0.5; box-shadow: none; } `;
-const LoadingContainer = styled.div` height: calc(100vh - 80px); display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 800; color: ${({ theme }) => theme.primary}; `;
+const POSContainer = styled.div`
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    height: calc(100vh - 40px);
+    gap: 20px;
+    padding: 20px;
+    background: ${({ theme }) => theme.bg};
 
-const ConnectionBadge = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 800;
-    background: ${({ $isOnline }) => $isOnline ? "#2ecc7122" : "#e74c3c22"};
-    color: ${({ $isOnline }) => $isOnline ? "#2ecc71" : "#e74c3c"};
-    border: 1px solid ${({ $isOnline }) => $isOnline ? "#2ecc7144" : "#e74c3c44"};
+    @media (max-width: 1024px) {
+        grid-template-columns: 1fr 340px;
+    }
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+        padding: 10px;
+        height: 100vh;
+    }
 `;
-
-const SyncBtn = styled.button`
+const HomeBtn = styled(Link)` background: ${({ theme }) => theme.cardBg}; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid ${({ theme }) => theme.borderColor}44; text-decoration: none; font-size: 22px; transition: all 0.2s; &:hover { background: ${({ theme }) => theme.primary}22; border-color: ${({ theme }) => theme.primary}; transform: scale(1.05); } `;
+const CerrarCajaBtn = styled.button` background: #ff5e5711; color: #ff5e57; border: 1px solid #ff5e5733; padding: 0 15px; height: 50px; border-radius: 12px; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; &:hover { background: #ff5e57; color: white; transform: translateY(-2px); box-shadow: 0 8px 20px #ff5e5744; } @media (max-width: 480px) { .text { display: none; } width: 50px; padding: 0; justify-content: center; } `;
+const ProductsSection = styled.div`
+    overflow-y: auto;
+    padding-right: 10px;
     display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 800;
-    background: ${({ theme }) => theme.primary};
-    color: white;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 4px 10px ${({ theme }) => theme.primary}44;
-    &:disabled { opacity: 0.6; cursor: not-allowed; }
-    .animate-spin { animation: spin 1s linear infinite; }
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    flex-direction: column;
+    gap: 20px;
+
+    @media (max-width: 768px) {
+        display: ${({ $hideOnMobile }) => $hideOnMobile ? 'none' : 'flex'};
+        padding-right: 0;
+        padding-bottom: 80px;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        @media (max-width: 480px) {
+            gap: 8px;
+        }
+    }
+    
+    .status-group {
+        display: flex;
+        gap: 8px;
+    }
+`;
+const SearchBox = styled.div` input { width: 100%; padding: 14px 20px; border-radius: 14px; border: 1px solid ${({ theme }) => theme.borderColor}44; background: ${({ theme }) => theme.cardBg}; color: ${({ theme }) => theme.text}; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.05); &:focus { outline: none; border-color: ${({ theme }) => theme.primary}; } } `;
+const ProductsGrid = styled.div` display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; @media (max-width: 480px) { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; } `;
+const ProductCard = styled.div` background: ${({ theme }) => theme.cardBg}; padding: 15px; border-radius: 20px; cursor: pointer; transition: all 0.2s; border: 1px solid ${({ theme }) => theme.borderColor}22; &:hover { transform: translateY(-3px); border-color: ${({ theme }) => theme.primary}; box-shadow: 0 10px 20px rgba(0,0,0,0.1); } .name { font-weight: 700; font-size: 14px; color: ${({ theme }) => theme.text}; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 40px; } .price { color: ${({ theme }) => theme.primary}; font-weight: 800; font-size: 18px; margin-top: 8px; } .stock { font-size: 11px; color: ${({ theme }) => theme.text}66; margin-top: 4px; font-weight: 700; } `;
+const CartSection = styled.div`
+    display: flex;
+    flex-direction: column;
+    background: ${({ theme }) => theme.cardBg};
+    border-radius: 24px;
+    border: 1px solid ${({ theme }) => theme.borderColor}33;
+    padding: 25px;
+    height: 100%;
+
+    @media (max-width: 768px) {
+        display: ${({ $showOnMobile }) => $showOnMobile ? 'flex' : 'none'};
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        border-radius: 0;
+        padding: 20px;
+    }
+
+    .cart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        h2 { margin: 0; font-size: 20px; font-weight: 800; }
+        .close-cart {
+            display: none;
+            @media (max-width: 768px) {
+                display: flex;
+                background: ${({ theme }) => theme.softBg};
+                border: none;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                color: ${({ theme }) => theme.text};
+            }
+        }
+    }
+`;
+const CartItems = styled.div` flex: 1; overflow-y: auto; padding: 10px 0; &::-webkit-scrollbar { width: 4px; } &::-webkit-scrollbar-thumb { background: ${({ theme }) => theme.primary}22; border-radius: 10px; } `;
+const EmptyState = styled.div` text-align: center; color: ${({ theme }) => theme.text}44; margin-top: 100px; font-weight: 600; `;
+const CartItem = styled.div` display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid ${({ theme }) => theme.borderColor}11; .details { .name { font-weight: 700; font-size: 14px; } .price { font-size: 13px; color: ${({ theme }) => theme.primary}; font-weight: 700; } } .actions { display: flex; align-items: center; gap: 6px; button { background: ${({ theme }) => theme.softBg}; width: 32px; height: 32px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; &.del { background: transparent; color: ${({ theme }) => theme.danger}; font-size: 18px; } } span { font-weight: 800; min-width: 25px; text-align: center; } } `;
+const CartFooter = styled.div` margin-top: auto; padding-top: 20px; border-top: 2px dashed ${({ theme }) => theme.borderColor}44; `;
+const TotalRow = styled.div` display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; span { font-size: 16px; font-weight: 700; color: ${({ theme }) => theme.text}88; &.amount { font-size: 36px; font-weight: 900; color: ${({ theme }) => theme.primary}; } } `;
+const PayBtn = styled.button` width: 100%; background: ${({ theme }) => theme.primary}; color: white; padding: 20px; border-radius: 18px; font-size: 20px; font-weight: 900; border: none; cursor: pointer; box-shadow: 0 10px 25px ${({ theme }) => theme.primary}55; transition: all 0.2s; &:disabled { opacity: 0.5; box-shadow: none; cursor: not-allowed; } &:active { transform: scale(0.98); } `;
+const LoadingContainer = styled.div` height: 100vh; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 900; color: ${({ theme }) => theme.primary}; letter-spacing: -1px; `;
+const ConnectionBadge = styled.div` display: flex; align-items: center; gap: 8px; padding: 0 15px; height: 50px; border-radius: 12px; font-size: 12px; font-weight: 800; background: ${({ $isOnline }) => $isOnline ? "#2ecc7111" : "#e74c3c11"}; color: ${({ $isOnline }) => $isOnline ? "#2ecc71" : "#e74c3c"}; border: 1px solid ${({ $isOnline }) => $isOnline ? "#2ecc7133" : "#e74c3c33"}; @media (max-width: 480px) { .text { display: none; } padding: 0; width: 50px; justify-content: center; } `;
+const SyncBtn = styled.button` display: flex; align-items: center; gap: 8px; padding: 0 15px; height: 50px; border-radius: 12px; font-size: 12px; font-weight: 800; background: ${({ theme }) => theme.primary}; color: white; border: none; cursor: pointer; box-shadow: 0 5px 15px ${({ theme }) => theme.primary}44; transition: all 0.2s; &:disabled { opacity: 0.6; cursor: not-allowed; } &:hover { transform: translateY(-2px); } .animate-spin { animation: spin 1s linear infinite; } @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } @media (max-width: 480px) { .text { display: none; } padding: 0; width: 50px; justify-content: center; } `;
+const MobileCartBtn = styled.button`
+    display: none;
+    @media (max-width: 768px) {
+        display: flex;
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        background: ${({ theme }) => theme.primary};
+        color: white;
+        padding: 16px;
+        border-radius: 16px;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        font-weight: 900;
+        font-size: 18px;
+        border: none;
+        box-shadow: 0 10px 30px ${({ theme }) => theme.primary}66;
+        z-index: 100;
+        span { font-size: 16px; }
+    }
 `;

@@ -126,15 +126,18 @@ export const ReporteVentas = () => {
                     <HomeBtn to="/">🏠</HomeBtn>
                     <h1>Reporte de Ventas por Empleado 📈</h1>
                 </div>
-                <Filters>
+                <Filters className="glass">
                     <div className="filter-group">
-                        <label>Desde:</label>
+                        <label><Icon icon="mdi:calendar-start" /> Desde:</label>
                         <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
                     </div>
                     <div className="filter-group">
-                        <label>Hasta:</label>
+                        <label><Icon icon="mdi:calendar-end" /> Hasta:</label>
                         <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} />
                     </div>
+                    <button className="refresh-btn" onClick={fetchReporte} title="Actualizar Reporte">
+                        <Icon icon="mdi:refresh" />
+                    </button>
                 </Filters>
             </Header>
 
@@ -311,7 +314,69 @@ export const ReporteVentas = () => {
 const Container = styled.div` padding: 40px 5%; min-height: 100vh; background: ${({ theme }) => theme.bg}; `;
 const Header = styled.header` display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; .left { display: flex; align-items: center; gap: 20px; h1 { margin: 0; font-size: 28px; font-weight: 900; } } `;
 const HomeBtn = styled(Link)` background: ${({ theme }) => theme.softBg}; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid ${({ theme }) => theme.borderColor}44; text-decoration: none; font-size: 20px; transition: all 0.2s; &:hover { background: ${({ theme }) => theme.primary}22; border-color: ${({ theme }) => theme.primary}; transform: scale(1.05); } `;
-const Filters = styled.div` display: flex; gap: 20px; .filter-group { display: flex; flex-direction: column; gap: 5px; label { font-size: 12px; font-weight: 700; color: ${({ theme }) => theme.text}88; text-transform: uppercase; } input { background: ${({ theme }) => theme.cardBg}; border: 1px solid ${({ theme }) => theme.borderColor}; color: ${({ theme }) => theme.text}; padding: 8px 15px; border-radius: 10px; font-weight: 600; } } `;
+const Filters = styled.div`
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+    padding: 15px 25px;
+    border-radius: 16px;
+    background: ${({ theme }) => theme.cardBg}88;
+    border: 1px solid ${({ theme }) => theme.borderColor}33;
+
+    @media (max-width: 768px) {
+        flex-direction: column;
+        width: 100%;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        flex: 1;
+        label {
+            font-size: 11px;
+            font-weight: 800;
+            color: ${({ theme }) => theme.primary};
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        input {
+            background: ${({ theme }) => theme.softBg};
+            border: 1px solid ${({ theme }) => theme.borderColor}44;
+            color: ${({ theme }) => theme.text};
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            &:focus {
+                border-color: ${({ theme }) => theme.primary};
+                outline: none;
+            }
+        }
+    }
+
+    .refresh-btn {
+        background: ${({ theme }) => theme.primary};
+        color: white;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        cursor: pointer;
+        transition: all 0.2s;
+        &:hover {
+            transform: rotate(180deg);
+            filter: brightness(1.1);
+        }
+    }
+`;
 const Content = styled.div` margin-top: 20px; `;
 const TableContainer = styled.div`
     background: ${({ theme }) => theme.cardBg};

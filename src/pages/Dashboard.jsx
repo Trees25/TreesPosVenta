@@ -19,24 +19,28 @@ export const Dashboard = () => {
     const [chartTopProd, setChartTopProd] = useState([]);
     const [chartCategorias, setChartCategorias] = useState([]);
     const [chartMetodos, setChartMetodos] = useState([]);
-    const [periodo, setPeriodo] = useState(7); // Días
+    const [periodo, setPeriodo] = useState(7); // Días o 'custom'
+    const [fechaInicio, setFechaInicio] = useState(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+    const [fechaFin, setFechaFin] = useState(new Date().toISOString().split('T')[0]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (profile?.empresa?.id) fetchData();
-    }, [profile, periodo]);
+    }, [profile, periodo, fechaInicio, fechaFin]);
 
     const fetchData = async () => {
+        if (!profile?.empresa?.id) {
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
             const idEmpresa = profile.empresa.id;
 
-            const fechaFin = new Date().toISOString().split('T')[0];
-            const fechaInicio = new Date(Date.now() - periodo * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
             const [m, c, top, cats, mets] = await Promise.all([
                 DashboardService.obtenerMétricas(idEmpresa, fechaInicio, fechaFin),
-                DashboardService.obtenerVentasPorDia(idEmpresa, periodo),
+                DashboardService.obtenerVentasPorDia(idEmpresa, periodo === 'custom' ? 30 : periodo),
                 DashboardService.obtenerTopProductos(idEmpresa, fechaInicio, fechaFin),
                 DashboardService.obtenerVentasPorCategoria(idEmpresa, fechaInicio, fechaFin),
                 DashboardService.obtenerVentasPorMetodo(idEmpresa, fechaInicio, fechaFin)
@@ -44,14 +48,37 @@ export const Dashboard = () => {
 
             setMetrics(m);
             setChartTopProd(top);
-            setChartCategorias(cats);
-            setChartMetodos(mets);
+            
+            // Procesar categorías: Si es [] o tiene null, asegurar que se vea algo
+            const processedCats = (cats || []).map(entry => ({
+                ...entry,
+                categoria: entry.categoria || "General"
+            }));
+            setChartCategorias(processedCats);
+
+            // Procesar métodos: Si metodo es null, poner "No especificado"
+            const processedMets = (mets || []).map(entry => ({
+                ...entry,
+                metodo: entry.metodo || "Efectivo/Otros"
+            }));
+            setChartMetodos(processedMets);
+            
             setChartVentas(c || []);
         } catch (error) {
             console.error("Dashboard error:", error);
             toast.error("Error al cargar dashboard: " + error.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handlePeriodChange = (p) => {
+        setPeriodo(p);
+        if (p !== 'custom') {
+            const end = new Date().toISOString().split('T')[0];
+            const start = new Date(Date.now() - p * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            setFechaInicio(start);
+            setFechaFin(end);
         }
     };
 
@@ -90,9 +117,17 @@ export const Dashboard = () => {
                     <div className="section-header">
                         <h3>Histórico de Ventas</h3>
                         <FilterBox>
-                            <button className={periodo === 7 ? "active" : ""} onClick={() => setPeriodo(7)}>7d</button>
-                            <button className={periodo === 30 ? "active" : ""} onClick={() => setPeriodo(30)}>30d</button>
-                            <button className={periodo === 365 ? "active" : ""} onClick={() => setPeriodo(365)}>1 año</button>
+                            <button className={periodo === 7 ? "active" : ""} onClick={() => handlePeriodChange(7)}>7d</button>
+                            <button className={periodo === 30 ? "active" : ""} onClick={() => handlePeriodChange(30)}>30d</button>
+                            <button className={periodo === 365 ? "active" : ""} onClick={() => handlePeriodChange(365)}>1 año</button>
+                            <button className={periodo === 'custom' ? "active" : ""} onClick={() => handlePeriodChange('custom')}>Personalizado</button>
+                            {periodo === 'custom' && (
+                                <div className="date-inputs">
+                                    <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} />
+                                    <span>al</span>
+                                    <input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} />
+                                </div>
+                            )}
                         </FilterBox>
                     </div>
                     <div className="chart-container">
@@ -140,13 +175,14 @@ export const Dashboard = () => {
                                     innerRadius={50}
                                     outerRadius={80}
                                     paddingAngle={5}
+                                    label={({ categoria, percent }) => `${categoria} ${(percent * 100).toFixed(0)}%`}
                                 >
                                     {chartCategorias.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip />
-                                <Legend verticalAlign="bottom" height={36} />
+                                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Total']} />
+                                <Legend verticalAlign="bottom" height={36} iconType="circle" />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
@@ -161,14 +197,17 @@ export const Dashboard = () => {
                                     data={chartMetodos}
                                     dataKey="total"
                                     nameKey="metodo"
+                                    innerRadius={50}
                                     outerRadius={80}
+                                    paddingAngle={5}
+                                    label={({ metodo, percent }) => `${metodo} ${(percent * 100).toFixed(0)}%`}
                                 >
                                     {chartMetodos.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip />
-                                <Legend verticalAlign="bottom" height={36} />
+                                <Tooltip formatter={(value) => [`$${value.toLocaleString()}`, 'Recibido']} />
+                                <Legend verticalAlign="bottom" height={36} iconType="circle" />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
@@ -326,6 +365,26 @@ const FilterBox = styled.div`
             color: white;
             box-shadow: 0 4px 10px ${({ theme }) => theme.primary}44;
         }
+    }
+    .date-inputs {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 10px;
+        span { font-size: 11px; opacity: 0.6; font-weight: 700; }
+        input {
+            background: ${({ theme }) => theme.bg};
+            border: 1px solid ${({ theme }) => theme.borderColor}44;
+            color: ${({ theme }) => theme.text};
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+    }
+    @media (max-width: 768px) {
+        flex-wrap: wrap;
+        .date-inputs { width: 100%; margin: 8px 0 0; }
     }
 `;
 

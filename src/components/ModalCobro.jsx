@@ -275,14 +275,26 @@ export const ModalCobro = ({ onVentaExitosa, onClose, idEmpresa, idUsuario, idCa
                         <PaymentsGrid>
                             {metodosPago.length > 0 ? (
                                 metodosPago.map(m => (
-                                    <PaymentItem key={m.id}>
-                                        <span>{m.icono ? <Icon icon={m.icono} /> : <Icon icon="mdi:payment" />} {m.nombre}</span>
-                                        <input
-                                            type="number"
-                                            value={pagos[m.id] || ""}
-                                            onChange={(e) => handlePagoChange(m.id, e.target.value)}
-                                            placeholder="0.00"
-                                        />
+                                    <PaymentItem key={m.id} $hasValue={pagos[m.id] > 0}>
+                                        <div className="method-info">
+                                            <div className="icon-box">{m.icono ? <Icon icon={m.icono} /> : <Icon icon="mdi:payment" />}</div>
+                                            <span>{m.nombre}</span>
+                                        </div>
+                                        <div className="input-row">
+                                            <input
+                                                type="number"
+                                                value={pagos[m.id] || ""}
+                                                onChange={(e) => handlePagoChange(m.id, e.target.value)}
+                                                placeholder="0.00"
+                                            />
+                                            <button 
+                                                className="quick-pay" 
+                                                onClick={() => handlePagoChange(m.id, Math.max(0, getTotal() - (totalPagado - (pagos[m.id] || 0))))}
+                                                title="Pagar saldo restante con este método"
+                                            >
+                                                ⚡
+                                            </button>
+                                        </div>
                                     </PaymentItem>
                                 ))
                             ) : (
@@ -363,8 +375,64 @@ const Label = styled.label` font-size: 13px; font-weight: 700; color: ${({ theme
 const SearchBox = styled.div` position: relative; input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid ${({ theme }) => theme.borderColor}; background: ${({ theme }) => theme.softBg}; color: ${({ theme }) => theme.text}; } button { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 18px; color: ${({ theme }) => theme.text}44; } `;
 const Dropdown = styled.div` position: absolute; top: 100%; left: 0; right: 0; background: ${({ theme }) => theme.cardBg}; border: 1px solid ${({ theme }) => theme.borderColor}; border-radius: 0 0 10px 10px; z-index: 10; box-shadow: 0 10px 20px rgba(0,0,0,0.1); div { padding: 10px 15px; cursor: pointer; &:hover { background: ${({ theme }) => theme.softBg}; } } `;
 const DiscountGroup = styled.div` display: flex; gap: 10px; input { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid ${({ theme }) => theme.borderColor}; background: ${({ theme }) => theme.softBg}; color: ${({ theme }) => theme.text}; } .toggles { display: flex; background: ${({ theme }) => theme.softBg}; padding: 4px; border-radius: 10px; button { padding: 8px 15px; border-radius: 8px; border: none; background: transparent; cursor: pointer; color: ${({ theme }) => theme.text}88; font-weight: 700; &.active { background: ${({ theme }) => theme.primary}; color: white; } } } `;
-const PaymentsGrid = styled.div` display: grid; grid-template-columns: 1fr; gap: 10px; `;
-const PaymentItem = styled.div` display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: ${({ theme }) => theme.softBg}; border-radius: 12px; span { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; } input { width: 120px; text-align: right; background: transparent; border: none; font-weight: 800; font-size: 18px; color: ${({ theme }) => theme.primary}; &:focus { outline: none; } } `;
+const PaymentsGrid = styled.div` display: grid; grid-template-columns: 1fr; gap: 12px; `;
+const PaymentItem = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: ${({ theme, $hasValue }) => $hasValue ? `linear-gradient(90deg, ${theme.primary}11, transparent)` : theme.softBg};
+    border: 1px solid ${({ theme, $hasValue }) => $hasValue ? theme.primary : 'transparent'};
+    border-radius: 16px;
+    transition: all 0.2s;
+    
+    .method-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        .icon-box {
+            width: 38px;
+            height: 38px;
+            background: ${({ theme, $hasValue }) => $hasValue ? theme.primary : theme.cardBg};
+            color: ${({ $hasValue }) => $hasValue ? 'white' : 'inherit'};
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.2s;
+        }
+        span { font-size: 14px; font-weight: 700; }
+    }
+
+    .input-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        input {
+            width: 100px;
+            text-align: right;
+            background: transparent;
+            border: none;
+            font-weight: 800;
+            font-size: 20px;
+            color: ${({ theme }) => theme.primary};
+            &:focus { outline: none; }
+            &::-webkit-inner-spin-button, &::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        }
+        .quick-pay {
+            background: ${({ theme }) => theme.primary}22;
+            color: ${({ theme }) => theme.primary};
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            &:hover { background: ${({ theme }) => theme.primary}; color: white; }
+        }
+    }
+`;
 const Summary = styled.div` background: ${({ theme }) => theme.softBg}; border-radius: 15px; padding: 20px; display: flex; flex-direction: column; gap: 8px; .row { display: flex; justify-content: space-between; font-weight: 600; font-size: 15px; &.highlight { color: ${({ theme }) => theme.danger}; } &.total { border-top: 1px dashed ${({ theme }) => theme.borderColor}; margin-top: 5px; padding-top: 5px; font-size: 22px; font-weight: 900; color: ${({ theme }) => theme.primary}; } &.footer { border-top: 1px solid ${({ theme }) => theme.borderColor}55; margin-top: 10px; padding-top: 15px; display: grid; grid-template-columns: 1fr 1fr; article { display: flex; flex-direction: column; .label { font-size: 11px; font-weight: 700; opacity: 0.6; } .val { font-size: 20px; font-weight: 800; } .text-success { color: #2ecc71; } .text-danger { color: #e74c3c; } } } } `;
 const Footer = styled.div` .confirm { width: 100%; padding: 18px; border-radius: 15px; background: ${({ theme }) => theme.primary}; color: white; font-weight: 800; font-size: 18px; box-shadow: 0 10px 20px ${({ theme }) => theme.primary}44; cursor: pointer; &:disabled { opacity: 0.5; box-shadow: none; cursor: not-allowed; } } `;
 

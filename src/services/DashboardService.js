@@ -43,10 +43,23 @@ export const DashboardService = {
     },
 
     obtenerVentasPorMetodo: async (idEmpresa, fechaInicio, fechaFin) => {
-        const { data, error } = await supabase.rpc("rpc_ventas_por_metodo", {
-            p_id_empresa: idEmpresa, fecha_ini: fechaInicio, fecha_fin: fechaFin
-        });
+        const { data, error } = await supabase
+            .from("movimientos_caja")
+            .select("monto, metodos_pago(nombre)")
+            .eq("id_empresa", idEmpresa)
+            .gte("fecha", `${fechaInicio}T00:00:00`)
+            .lte("fecha", `${fechaFin}T23:59:59`);
+
         if (error) throw error;
-        return data || [];
+
+        // Agrupar por nombre de método
+        const agrupado = (data || []).reduce((acc, curr) => {
+            const nombre = curr.metodos_pago?.nombre || "Efectivo/Otros";
+            if (!acc[nombre]) acc[nombre] = 0;
+            acc[nombre] += parseFloat(curr.monto) || 0;
+            return acc;
+        }, {});
+
+        return Object.entries(agrupado).map(([metodo, total]) => ({ metodo, total }));
     }
 };

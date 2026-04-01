@@ -100,6 +100,12 @@ export const GestionUsuarios = () => {
                         return false;
                     }
 
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(email)) {
+                        Swal.showValidationMessage('El formato del correo electrónico no es válido');
+                        return false;
+                    }
+
                     // 1. Validar límites de sucursal
                     try {
                         const canAdd = await PersonalService.canAddPersonalToBranch(empresa.id, id_sucursal, empresa.id_plan);
