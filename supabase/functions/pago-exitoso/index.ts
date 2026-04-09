@@ -107,6 +107,29 @@ Deno.serve(async (req) => {
 
         if (errorEmp) console.error("Error actualizando empresa:", errorEmp.message)
 
+        // 6. GENERACIÓN DE RECIBO INTERNO (ADMINISTRACIÓN)
+        try {
+            // Obtener el siguiente número correlativo
+            const { count } = await supabaseClient
+                .from('facturas_administrador')
+                .select('*', { count: 'exact', head: true })
+
+            const proximoNumero = (count || 0) + 1
+            const numeroComprobante = proximoNumero.toString().padStart(8, '0')
+
+            // Insertar registro administrativo
+            await supabaseClient.from('facturas_administrador').insert({
+                id_empresa_cliente: Number(id_empresa),
+                id_suscripcion: id_suscripcion !== "nueva" ? Number(id_suscripcion) : null,
+                monto_total: Number(paymentBody.transaction_amount),
+                numero_comprobante: numeroComprobante,
+                fiscal_json: paymentBody // Guardamos el ID y respuesta completa de MP como referencia
+            })
+        } catch (err) {
+            console.error("Error al generar recibo interno:", err.message)
+            // No bloqueamos la experiencia del usuario si falla el registro administrativo
+        }
+
         return Response.redirect(`${FRONTEND_URL}/?status=success`, 302)
 
     } catch (error) {
